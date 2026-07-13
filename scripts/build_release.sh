@@ -41,6 +41,8 @@ flutter pub get
 
 COMMON=(
   --release
+  --obfuscate
+  --split-debug-info=build/debug-info
   --dart-define-from-file="$DEFINES_OUT"
   --build-name="$VERSION_NAME"
   --build-number="$VERSION_CODE"

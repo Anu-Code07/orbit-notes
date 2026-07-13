@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<true/>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
@@ -20,14 +22,60 @@
 		<string>$(FLUTTER_BUILD_NAME)</string>
 		<key>CFBundleSignature</key>
 		<string>????</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>io.supabase.orbitnotes</string>
+				</array>
+			</dict>
+		</array>
 		<key>CFBundleVersion</key>
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>LSRequiresIPhoneOS</key>
+		<true/>
+		<key>NSCameraUsageDescription</key>
+		<string>Orbit Notes can use the camera to capture moments on your trips.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Orbit Notes uses your location only when you choose to pin your current spot on a journal entry.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Orbit Notes uses your location only when you choose to pin your current spot on a journal entry.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Orbit Notes may save journal covers and entry photos to your library when you choose.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Orbit Notes needs photo access to attach local pictures to your travel journal.</string>
+		<key>UIApplicationSceneManifest</key>
+		<dict>
+			<key>UIApplicationSupportsMultipleScenes</key>
+			<false/>
+			<key>UISceneConfigurations</key>
+			<dict>
+				<key>UIWindowSceneSessionRoleApplication</key>
+				<array>
+					<dict>
+						<key>UISceneClassName</key>
+						<string>UIWindowScene</string>
+						<key>UISceneConfigurationName</key>
+						<string>flutter</string>
+						<key>UISceneDelegateClassName</key>
+						<string>FlutterSceneDelegate</string>
+						<key>UISceneStoryboardFile</key>
+						<string>Main</string>
+					</dict>
+				</array>
+			</dict>
+		</dict>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
 		<key>UIMainStoryboardFile</key>
 		<string>Main</string>
+		<key>UIStatusBarHidden</key>
+		<true/>
 		<key>UISupportedInterfaceOrientations</key>
 		<array>
 			<string>UIInterfaceOrientationPortrait</string>
@@ -41,34 +89,7 @@
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
-		<key>CADisableMinimumFrameDurationOnPhone</key>
-		<true/>
-		<key>UIApplicationSupportsIndirectInputEvents</key>
-		<true/>
-		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Orbit Notes needs photo access to attach local pictures to your travel journal.</string>
-		<key>NSPhotoLibraryAddUsageDescription</key>
-		<string>Orbit Notes may save journal covers and entry photos to your library when you choose.</string>
-		<key>NSCameraUsageDescription</key>
-		<string>Orbit Notes can use the camera to capture moments on your trips.</string>
-		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>Orbit Notes uses your location only when you choose to pin your current spot on a journal entry.</string>
-		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>Orbit Notes uses your location only when you choose to pin your current spot on a journal entry.</string>
-		<key>UIStatusBarHidden</key>
-		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
-		<key>CFBundleURLTypes</key>
-		<array>
-			<dict>
-				<key>CFBundleTypeRole</key>
-				<string>Editor</string>
-				<key>CFBundleURLSchemes</key>
-				<array>
-					<string>io.supabase.orbitnotes</string>
-				</array>
-			</dict>
-		</array>
 	</dict>
 </plist>

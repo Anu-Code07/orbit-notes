@@ -3,6 +3,7 @@
 /// Override at run time with:
 /// `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...`
 /// `--dart-define=GOOGLE_WEB_CLIENT_ID=...`
+/// `--dart-define=GOOGLE_IOS_CLIENT_ID=...` (optional; enables native iOS Google)
 ///
 /// Never put the Google client *secret* here — that belongs only in the
 /// Supabase Auth → Google provider dashboard.
@@ -25,6 +26,13 @@ class SupabaseConfig {
     'GOOGLE_WEB_CLIENT_ID',
     defaultValue:
         '245020475764-jhbmje6n9sm636bkta903fr053aj13qt.apps.googleusercontent.com',
+  );
+
+  /// iOS OAuth client ID from Google Cloud Console (type: iOS).
+  /// When empty, iOS uses Supabase browser OAuth instead of native Google Sign-In.
+  static const googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+    defaultValue: '',
   );
 
   static const authRedirectUrl = 'io.supabase.orbitnotes://login-callback/';

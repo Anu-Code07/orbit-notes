@@ -123,6 +123,7 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
                                   ),
                             ),
                           ),
+                          const _SignedInAsLine(),
                           SizedBox(height: spacing.xl),
                           Row(
                             children: [
@@ -308,6 +309,42 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SignedInAsLine extends StatelessWidget {
+  const _SignedInAsLine();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final spacing = context.spacing;
+
+    return BlocBuilder<AuthBloc, AuthState>(
+      buildWhen: (prev, next) =>
+          prev.runtimeType != next.runtimeType ||
+          (prev is AuthAuthenticated &&
+              next is AuthAuthenticated &&
+              prev.user != next.user),
+      builder: (context, state) {
+        if (state is! AuthAuthenticated) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: EdgeInsets.only(top: spacing.md),
+          child: Text(
+            state.user.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: colors.ink,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+          ),
+        );
+      },
     );
   }
 }

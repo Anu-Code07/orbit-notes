@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -74,24 +77,10 @@ class AuthRemoteDataSource {
 
   Future<OrbitUser> signInWithGoogle() async {
     try {
-      await _ensureGoogleInitialized();
-      final account = await _googleSignIn.authenticate();
-      final idToken = account.authentication.idToken;
-      if (idToken == null || idToken.isEmpty) {
-        throw const AuthFailure(
-          'Google did not return an ID token. Check the Web client ID setup.',
-        );
+      if (_useNativeGoogleSignIn) {
+        return await _signInWithGoogleNative();
       }
-
-      final response = await _client.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-      );
-      final user = _mapUser(response.user);
-      if (user == null) {
-        throw const AuthFailure('Google sign-in succeeded without a user.');
-      }
-      return user;
+      return await _signInWithGoogleOAuth();
     } on AuthFailure {
       rethrow;
     } on AuthException catch (error) {
@@ -106,6 +95,63 @@ class AuthRemoteDataSource {
     }
   }
 
+  /// Native Google SDK (Android always; iOS when [GOOGLE_IOS_CLIENT_ID] is set).
+  Future<OrbitUser> _signInWithGoogleNative() async {
+    await _ensureGoogleInitialized();
+    final account = await _googleSignIn.authenticate();
+    final idToken = account.authentication.idToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw const AuthFailure(
+        'Google did not return an ID token. Check the Web client ID setup.',
+      );
+    }
+
+    final response = await _client.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+    );
+    final user = _mapUser(response.user);
+    if (user == null) {
+      throw const AuthFailure('Google sign-in succeeded without a user.');
+    }
+    return user;
+  }
+
+  /// Browser OAuth + deep link — works on iOS with only the Web Google client.
+  Future<OrbitUser> _signInWithGoogleOAuth() async {
+    final existing = _mapUser(_client.auth.currentUser);
+    if (existing != null) return existing;
+
+    final completer = Completer<OrbitUser>();
+    late final StreamSubscription<AuthState> subscription;
+    subscription = _client.auth.onAuthStateChange.listen((data) {
+      if (data.event != AuthChangeEvent.signedIn) return;
+      final user = _mapUser(data.session?.user);
+      if (user == null || completer.isCompleted) return;
+      completer.complete(user);
+    });
+
+    try {
+      final launched = await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: SupabaseConfig.authRedirectUrl,
+        authScreenLaunchMode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        throw const AuthFailure('Could not open Google sign-in.');
+      }
+
+      return await completer.future.timeout(
+        const Duration(minutes: 2),
+        onTimeout: () => throw const AuthFailure(
+          'Google sign-in timed out. Try again.',
+        ),
+      );
+    } finally {
+      await subscription.cancel();
+    }
+  }
+
   Future<void> signOut() async {
     try {
       if (_googleReady) {
@@ -117,9 +163,20 @@ class AuthRemoteDataSource {
     await _client.auth.signOut();
   }
 
+  bool get _useNativeGoogleSignIn {
+    if (kIsWeb) return false;
+    if (defaultTargetPlatform == TargetPlatform.android) return true;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return SupabaseConfig.googleIosClientId.isNotEmpty;
+    }
+    return false;
+  }
+
   Future<void> _ensureGoogleInitialized() async {
     if (_googleReady) return;
+    final iosClientId = SupabaseConfig.googleIosClientId;
     await _googleSignIn.initialize(
+      clientId: iosClientId.isEmpty ? null : iosClientId,
       serverClientId: SupabaseConfig.googleWebClientId,
     );
     _googleReady = true;
@@ -129,7 +186,22 @@ class AuthRemoteDataSource {
     if (user == null) return null;
     final email = user.email;
     if (email == null || email.isEmpty) return null;
-    return OrbitUser(id: user.id, email: email);
+    final meta = user.userMetadata;
+    final displayName = _readDisplayName(meta);
+    return OrbitUser(
+      id: user.id,
+      email: email,
+      displayName: displayName,
+    );
+  }
+
+  String? _readDisplayName(Map<String, dynamic>? meta) {
+    if (meta == null) return null;
+    for (final key in ['full_name', 'name', 'preferred_username']) {
+      final value = meta[key];
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+    }
+    return null;
   }
 
   String _friendlyAuthMessage(String message) {

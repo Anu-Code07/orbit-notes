@@ -31,9 +31,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
   flutter_bloc: ^9.1.1
   equatable: ^2.1.0
   drift: ^2.31.0
@@ -82,8 +79,8 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  assets:
-    - assets/branding/
+  # Branding PNGs are only for flutter_launcher_icons / flutter_native_splash
+  # generation — do not ship them inside the app binary.
 
 flutter_launcher_icons:
   android: true

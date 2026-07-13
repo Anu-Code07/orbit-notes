@@ -31,6 +31,11 @@ In **SQL Editor**, paste and run:
 
 For Android Google Sign-In, also create an **Android** OAuth client with package `com.orbit.orbit_notes` and your SHA-1. Keep the **Web** client ID as the one above (app uses it as `serverClientId`).
 
+**iOS:** Orbit uses Supabase browser OAuth (`io.supabase.orbitnotes://login-callback/`) by default, so a Web client is enough. For native Google Sign-In on iOS, create an **iOS** OAuth client with bundle ID `com.orbit.orbitNotes`, then pass:
+
+- `--dart-define=GOOGLE_IOS_CLIENT_ID=….apps.googleusercontent.com`
+- Add that client’s **iOS URL scheme** (`com.googleusercontent.apps.…`) under `CFBundleURLSchemes` in `ios/Runner/Info.plist`
+
 ## 4. Run the app
 
 ```bash

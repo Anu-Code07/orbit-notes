@@ -14,6 +14,7 @@ import 'package:orbit_notes/features/notes/presentation/pages/create_trip_page.d
 import 'package:orbit_notes/features/notes/presentation/pages/entry_editor_page.dart';
 import 'package:orbit_notes/features/notes/presentation/pages/trip_detail_page.dart';
 import 'package:orbit_notes/features/notes/presentation/pages/trips_home_page.dart';
+import 'package:orbit_notes/features/splash/presentation/pages/splash_page.dart';
 
 class OrbitApp extends StatefulWidget {
   const OrbitApp({super.key});
@@ -42,17 +43,22 @@ class _OrbitAppState extends State<OrbitApp> {
     );
 
     _router = GoRouter(
-      initialLocation: _prefs.hasCompletedAuthGate ? '/' : '/login',
+      initialLocation: '/splash',
       refreshListenable: GoRouterRefreshStream(_authBloc.stream),
       redirect: (context, state) {
-        final onAuth = state.matchedLocation == '/login' ||
-            state.matchedLocation == '/signup';
+        final location = state.matchedLocation;
+        if (location == '/splash') return null;
+        final onAuth = location == '/login' || location == '/signup';
         if (!_prefs.hasCompletedAuthGate && !onAuth) {
           return '/login';
         }
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/splash',
+          builder: (context, state) => const SplashPage(),
+        ),
         GoRoute(
           path: '/login',
           builder: (context, state) => const LoginPage(),
