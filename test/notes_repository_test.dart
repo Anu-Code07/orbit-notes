@@ -81,10 +81,12 @@ void main() {
       expect(entries.first.placeName, 'Alfama');
     });
 
-    test('seedDemoIfEmpty seeds sample trips once', () async {
+    test('seedDemoIfEmpty seeds one example trip once', () async {
       await repository.seedDemoIfEmpty();
       final first = await repository.getTrips();
-      expect(first.length, greaterThanOrEqualTo(2));
+      expect(first, hasLength(1));
+      expect(first.first.id, 'orbit-example-trip');
+      expect(first.first.title, contains('Example'));
 
       await repository.seedDemoIfEmpty();
       final second = await repository.getTrips();

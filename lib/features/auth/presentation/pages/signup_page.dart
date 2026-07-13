@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:orbit_notes/core/di/injection.dart';
+import 'package:orbit_notes/core/prefs/app_prefs.dart';
 import 'package:orbit_notes/core/theme/app_colors.dart';
 import 'package:orbit_notes/core/theme/app_spacing.dart';
 import 'package:orbit_notes/core/widgets/orbit_button.dart';
@@ -66,14 +68,15 @@ class _SignupPageState extends State<SignupPage> {
     final spacing = context.spacing;
 
     return BlocConsumer<AuthBloc, AuthState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is AuthFailureState) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
           );
         }
         if (state is AuthAuthenticated) {
-          context.go('/');
+          await getIt<AppPrefs>().markAuthGateCompleted();
+          if (context.mounted) context.go('/');
         }
       },
       builder: (context, state) {
@@ -198,7 +201,12 @@ class _SignupPageState extends State<SignupPage> {
               ),
               SizedBox(height: spacing.sm),
               TextButton(
-                onPressed: loading ? null : () => context.go('/'),
+                onPressed: loading
+                    ? null
+                    : () async {
+                        await getIt<AppPrefs>().markAuthGateCompleted();
+                        if (context.mounted) context.go('/');
+                      },
                 child: Text(
                   'Continue offline',
                   style: GoogleFonts.spaceGrotesk(

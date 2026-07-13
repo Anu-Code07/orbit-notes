@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 
 import 'package:orbit_notes/core/location/device_location_service.dart';
+import 'package:orbit_notes/core/prefs/app_prefs.dart';
 import 'package:orbit_notes/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:orbit_notes/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:orbit_notes/features/auth/domain/repositories/auth_repository.dart';
@@ -18,7 +19,9 @@ import 'package:orbit_notes/features/notes/presentation/bloc/trips/trips_bloc.da
 
 final getIt = GetIt.instance;
 
-Future<void> configureDependencies() async {
+Future<void> configureDependencies({required AppPrefs prefs}) async {
+  getIt.registerSingleton<AppPrefs>(prefs);
+
   final db = AppDatabase();
   getIt.registerSingleton<AppDatabase>(db);
   getIt.registerSingleton<NotesRepository>(NotesRepositoryImpl(db));

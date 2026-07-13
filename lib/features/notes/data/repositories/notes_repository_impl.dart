@@ -280,31 +280,33 @@ class NotesRepositoryImpl implements NotesRepository {
     if (existing.isNotEmpty) return;
 
     final now = DateTime.now();
+    // One clearly labeled sample trip — users can delete it anytime.
+    const exampleId = 'orbit-example-trip';
     final trip = Trip(
-      id: _uuid.v4(),
-      title: 'Kyoto Spring',
+      id: exampleId,
+      title: 'Example · Kyoto Spring',
       startDate: now.subtract(const Duration(days: 14)),
       endDate: now.subtract(const Duration(days: 10)),
-      destination: 'Kyoto, Japan',
+      destination: 'Sample destination — delete anytime',
       accentIndex: 0,
       createdAt: now,
     );
     await createTrip(trip);
 
     final day1 = Day(
-      id: _uuid.v4(),
+      id: 'orbit-example-day-1',
       tripId: trip.id,
       date: trip.startDate,
-      title: 'Arrival & Fushimi',
-      note: 'Torii gates at dusk.',
+      title: 'Day 1 · Arrival',
+      note: 'This is sample content to show how a day works.',
       createdAt: now,
     );
     final day2 = Day(
-      id: _uuid.v4(),
+      id: 'orbit-example-day-2',
       tripId: trip.id,
       date: trip.startDate.add(const Duration(days: 1)),
-      title: 'Arashiyama',
-      note: 'Bamboo grove before the crowds.',
+      title: 'Day 2 · Explore',
+      note: 'Open an entry, add a pin, or delete this whole trip.',
       createdAt: now,
     );
     await createDay(day1);
@@ -312,20 +314,22 @@ class NotesRepositoryImpl implements NotesRepository {
 
     await createEntry(
       Entry(
-        id: _uuid.v4(),
+        id: 'orbit-example-entry-1',
         dayId: day1.id,
         body:
-            'Landed late, walked the vermillion path as lanterns came on. Quiet enough to hear the gravel underfoot.',
+            'EXAMPLE ENTRY — Safe to delete. Orbit keeps trips → days → entries. '
+            'This sample shows the hierarchy with a map pin attached.',
         placeName: 'Fushimi Inari',
         createdAt: now,
       ),
     );
     await createEntry(
       Entry(
-        id: _uuid.v4(),
+        id: 'orbit-example-entry-2',
         dayId: day2.id,
         body:
-            'Mist in the bamboo. Coffee by the river, then a slow train back through the hills.',
+            'Add your own trips with New trip. Swipe or use delete on this '
+            'example when you no longer need it.',
         placeName: 'Arashiyama',
         createdAt: now,
       ),
@@ -333,62 +337,13 @@ class NotesRepositoryImpl implements NotesRepository {
 
     await upsertPin(
       MapPin(
-        id: _uuid.v4(),
+        id: 'orbit-example-pin-1',
         latitude: 34.9671,
         longitude: 135.7727,
-        label: 'Fushimi Inari',
+        label: 'Example pin · Fushimi Inari',
         tripId: trip.id,
         dayId: day1.id,
-        createdAt: now,
-      ),
-    );
-    await upsertPin(
-      MapPin(
-        id: _uuid.v4(),
-        latitude: 35.0094,
-        longitude: 135.6675,
-        label: 'Arashiyama',
-        tripId: trip.id,
-        dayId: day2.id,
-        createdAt: now,
-      ),
-    );
-
-    final trip2 = Trip(
-      id: _uuid.v4(),
-      title: 'Lisbon Weekend',
-      startDate: now.subtract(const Duration(days: 40)),
-      endDate: now.subtract(const Duration(days: 38)),
-      destination: 'Lisbon, Portugal',
-      accentIndex: 3,
-      createdAt: now.subtract(const Duration(days: 41)),
-    );
-    await createTrip(trip2);
-    final lisbonDay = Day(
-      id: _uuid.v4(),
-      tripId: trip2.id,
-      date: trip2.startDate,
-      title: 'Alfama & Miradouros',
-      createdAt: now,
-    );
-    await createDay(lisbonDay);
-    await createEntry(
-      Entry(
-        id: _uuid.v4(),
-        dayId: lisbonDay.id,
-        body: 'Yellow trams, pastel walls, and a pastel de nata that ruined all others.',
-        placeName: 'Alfama',
-        createdAt: now,
-      ),
-    );
-    await upsertPin(
-      MapPin(
-        id: _uuid.v4(),
-        latitude: 38.7122,
-        longitude: -9.1317,
-        label: 'Alfama',
-        tripId: trip2.id,
-        dayId: lisbonDay.id,
+        entryId: 'orbit-example-entry-1',
         createdAt: now,
       ),
     );

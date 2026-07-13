@@ -17,11 +17,15 @@ class TripCard extends StatelessWidget {
     required this.trip,
     required this.index,
     required this.onTap,
+    this.onDelete,
+    this.isExample = false,
   });
 
   final Trip trip;
   final int index;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
+  final bool isExample;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +41,7 @@ class TripCard extends StatelessWidget {
     final height = tall ? 280.0 : 220.0;
     final tilt = index.isOdd ? -0.012 : 0.012;
 
-    return TweenAnimationBuilder<double>(
+    final card = TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: 420 + (index * 70).clamp(0, 280)),
       curve: Curves.easeOutCubic,
@@ -93,6 +97,31 @@ class TripCard extends StatelessWidget {
                               Colors.black.withValues(alpha: 0.05),
                               Colors.black.withValues(alpha: 0.35),
                             ],
+                          ),
+                        ),
+                      ),
+                    if (isExample)
+                      Positioned(
+                        top: spacing.md,
+                        left: spacing.md,
+                        child: FrostedGlass(
+                          borderRadius: radii.smRadius,
+                          tintOpacity: 0.72,
+                          blurSigma: 12,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(
+                            'EXAMPLE',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: colors.ink,
+                                  letterSpacing: 1.4,
+                                  fontSize: 10,
+                                ),
                           ),
                         ),
                       ),
@@ -166,6 +195,48 @@ class TripCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (onDelete == null) return card;
+
+    return Dismissible(
+      key: ValueKey(trip.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(isExample ? 'Remove example trip?' : 'Delete trip?'),
+            content: Text(
+              isExample
+                  ? 'This sample journal is only here to teach how Orbit works. You can delete it safely.'
+                  : '“${trip.title}” and its days, entries, and photos will be removed from this device.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        );
+        return confirmed ?? false;
+      },
+      onDismissed: (_) => onDelete!(),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: spacing.lg),
+        decoration: BoxDecoration(
+          color: colors.error.withValues(alpha: 0.12),
+          borderRadius: radii.xlRadius,
+        ),
+        child: Icon(Icons.delete_outline, color: colors.error),
+      ),
+      child: card,
     );
   }
 }

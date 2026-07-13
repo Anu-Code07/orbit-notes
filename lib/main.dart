@@ -6,12 +6,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:orbit_notes/app.dart';
 import 'package:orbit_notes/core/config/supabase_config.dart';
 import 'package:orbit_notes/core/di/injection.dart';
+import 'package:orbit_notes/core/prefs/app_prefs.dart';
 import 'package:orbit_notes/core/theme/app_colors.dart';
 import 'package:orbit_notes/features/auth/presentation/bloc/auth_bloc.dart';
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  final prefs = await AppPrefs.open();
 
   await Supabase.initialize(
     url: SupabaseConfig.url,
@@ -21,7 +24,7 @@ Future<void> main() async {
     ),
   );
 
-  await configureDependencies();
+  await configureDependencies(prefs: prefs);
   getIt<AuthBloc>().add(const AuthStarted());
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -33,6 +36,6 @@ Future<void> main() async {
     ),
   );
 
-  runApp(OrbitApp());
+  runApp(const OrbitApp());
   FlutterNativeSplash.remove();
 }
