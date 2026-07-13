@@ -8,12 +8,20 @@ import 'package:orbit_notes/features/auth/domain/repositories/auth_repository.da
 import 'package:orbit_notes/features/auth/domain/usecases/auth_usecases.dart';
 import 'package:orbit_notes/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:orbit_notes/features/notes/data/datasources/app_database.dart';
+import 'package:orbit_notes/features/notes/data/datasources/groq_trip_planner_datasource.dart';
+import 'package:orbit_notes/features/notes/data/datasources/nominatim_place_search_datasource.dart';
+import 'package:orbit_notes/features/notes/data/datasources/place_image_service.dart';
 import 'package:orbit_notes/features/notes/data/repositories/notes_repository_impl.dart';
 import 'package:orbit_notes/features/notes/data/sync/orbit_cloud_sync.dart';
 import 'package:orbit_notes/features/notes/domain/repositories/notes_repository.dart';
+import 'package:orbit_notes/features/notes/domain/repositories/place_search_repository.dart';
+import 'package:orbit_notes/features/notes/domain/repositories/trip_planner_repository.dart';
 import 'package:orbit_notes/features/notes/domain/usecases/journal_usecases.dart';
+import 'package:orbit_notes/features/notes/domain/usecases/plan_trip_usecases.dart';
+import 'package:orbit_notes/features/notes/domain/usecases/search_places.dart';
 import 'package:orbit_notes/features/notes/domain/usecases/trip_usecases.dart';
 import 'package:orbit_notes/features/notes/presentation/bloc/entry/entry_bloc.dart';
+import 'package:orbit_notes/features/notes/presentation/bloc/plan_trip/plan_trip_bloc.dart';
 import 'package:orbit_notes/features/notes/presentation/bloc/trip_detail/trip_detail_bloc.dart';
 import 'package:orbit_notes/features/notes/presentation/bloc/trips/trips_bloc.dart';
 
@@ -74,6 +82,18 @@ Future<void> configureDependencies({required AppPrefs prefs}) async {
   getIt.registerLazySingleton(() => UpsertPin(repo));
   getIt.registerLazySingleton(() => SeedDemoIfEmpty(repo));
 
+  getIt.registerLazySingleton(PlaceImageService.new);
+  getIt.registerLazySingleton<PlaceSearchRepository>(
+    NominatimPlaceSearchDataSource.new,
+  );
+  getIt.registerLazySingleton(() => SearchPlaces(getIt()));
+
+  getIt.registerLazySingleton<TripPlannerRepository>(
+    GroqTripPlannerDataSource.new,
+  );
+  getIt.registerLazySingleton(() => PlanTripWithAi(getIt()));
+  getIt.registerLazySingleton(() => PersistPlannedTrip(getIt()));
+
   getIt.registerFactory(
     () => TripsBloc(
       getTrips: getIt(),
@@ -104,6 +124,13 @@ Future<void> configureDependencies({required AppPrefs prefs}) async {
       addPhoto: getIt(),
       persistImage: getIt(),
       upsertPin: getIt(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => PlanTripBloc(
+      planTripWithAi: getIt(),
+      persistPlannedTrip: getIt(),
     ),
   );
 }

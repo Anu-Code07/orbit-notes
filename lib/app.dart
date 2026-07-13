@@ -12,6 +12,7 @@ import 'package:orbit_notes/features/auth/presentation/pages/login_page.dart';
 import 'package:orbit_notes/features/auth/presentation/pages/signup_page.dart';
 import 'package:orbit_notes/features/notes/presentation/pages/create_trip_page.dart';
 import 'package:orbit_notes/features/notes/presentation/pages/entry_editor_page.dart';
+import 'package:orbit_notes/features/notes/presentation/pages/plan_trip_page.dart';
 import 'package:orbit_notes/features/notes/presentation/pages/trip_detail_page.dart';
 import 'package:orbit_notes/features/notes/presentation/pages/trips_home_page.dart';
 import 'package:orbit_notes/features/splash/presentation/pages/splash_page.dart';
@@ -74,6 +75,10 @@ class _OrbitAppState extends State<OrbitApp> {
         GoRoute(
           path: '/trips/new',
           builder: (context, state) => const CreateTripPage(),
+        ),
+        GoRoute(
+          path: '/trips/plan',
+          builder: (context, state) => const PlanTripPage(),
         ),
         GoRoute(
           path: '/trips/:tripId',

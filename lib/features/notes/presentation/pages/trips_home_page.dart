@@ -159,6 +159,20 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
                                 ),
                               ),
                               SizedBox(width: spacing.sm),
+                              OrbitButton(
+                                label: 'Plan',
+                                variant: OrbitButtonVariant.secondary,
+                                icon: Icons.auto_awesome,
+                                onPressed: () async {
+                                  await context.push('/trips/plan');
+                                  if (context.mounted) {
+                                    context
+                                        .read<TripsBloc>()
+                                        .add(const RefreshTrips());
+                                  }
+                                },
+                              ),
+                              SizedBox(width: spacing.sm),
                               Showcase(
                                 key: _accountKey,
                                 title: 'Sync when ready',

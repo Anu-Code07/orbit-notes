@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,8 @@ import 'package:orbit_notes/core/theme/app_colors.dart';
 import 'package:orbit_notes/core/theme/app_radii.dart';
 import 'package:orbit_notes/core/theme/app_spacing.dart';
 import 'package:orbit_notes/core/widgets/orbit_button.dart';
+import 'package:orbit_notes/features/notes/domain/entities/place_search_result.dart';
+import 'package:orbit_notes/features/notes/domain/usecases/search_places.dart';
 import 'package:orbit_notes/features/notes/presentation/bloc/entry/entry_bloc.dart';
 
 class EntryEditorPage extends StatelessWidget {
@@ -353,22 +356,91 @@ class PlacePinPickerSheet extends StatefulWidget {
 class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
   late LatLng _point;
   late final TextEditingController _labelController;
+  late final TextEditingController _searchController;
   late final MapController _mapController;
   bool _locating = false;
+  bool _searching = false;
+  String? _searchError;
+  List<PlaceSearchResult> _results = const [];
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _point = widget.initial;
     _labelController = TextEditingController(text: widget.label);
+    _searchController = TextEditingController();
     _mapController = MapController();
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _labelController.dispose();
+    _searchController.dispose();
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 450), () {
+      _runSearch(value);
+    });
+  }
+
+  Future<void> _runSearch(String value) async {
+    final query = value.trim();
+    if (query.length < 2) {
+      setState(() {
+        _results = const [];
+        _searchError = null;
+        _searching = false;
+      });
+      return;
+    }
+    setState(() {
+      _searching = true;
+      _searchError = null;
+    });
+    try {
+      final results = await getIt<SearchPlaces>()(query);
+      if (!mounted) return;
+      setState(() {
+        _results = results;
+        _searching = false;
+        if (results.isEmpty) {
+          _searchError = 'No places found.';
+        }
+      });
+    } on Failure catch (failure) {
+      if (!mounted) return;
+      setState(() {
+        _searching = false;
+        _results = const [];
+        _searchError = failure.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _searching = false;
+        _results = const [];
+        _searchError = 'Could not search places.';
+      });
+    }
+  }
+
+  void _selectResult(PlaceSearchResult result) {
+    final point = LatLng(result.latitude, result.longitude);
+    setState(() {
+      _point = point;
+      _results = const [];
+      _searchError = null;
+      _searchController.text = result.name;
+    });
+    _labelController.text = result.name;
+    _mapController.move(point, 14);
+    FocusScope.of(context).unfocus();
   }
 
   Future<void> _jumpToGps() async {
@@ -402,7 +474,7 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final spacing = context.spacing;
-    final height = MediaQuery.sizeOf(context).height * 0.75;
+    final height = MediaQuery.sizeOf(context).height * 0.82;
 
     return SizedBox(
       height: height,
@@ -417,11 +489,71 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
             ),
             SizedBox(height: spacing.sm),
             Text(
-              'Tap the map, or jump to GPS — both work.',
+              'Search a place, tap the map, or jump to GPS.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colors.muted,
                   ),
             ),
+            SizedBox(height: spacing.md),
+            TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: 'Search a place…',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searching
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+            if (_results.isNotEmpty)
+              Flexible(
+                flex: 0,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 140),
+                  child: Material(
+                    color: colors.surfaceSoft,
+                    borderRadius: BorderRadius.circular(12),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: _results.length,
+                      separatorBuilder: (_, __) =>
+                          Divider(height: 1, color: colors.hairline),
+                      itemBuilder: (context, index) {
+                        final item = _results[index];
+                        return ListTile(
+                          dense: true,
+                          title: Text(item.name),
+                          subtitle: Text(
+                            item.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () => _selectResult(item),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              )
+            else if (_searchError != null)
+              Padding(
+                padding: EdgeInsets.only(top: spacing.xs),
+                child: Text(
+                  _searchError!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colors.muted,
+                      ),
+                ),
+              ),
             SizedBox(height: spacing.md),
             TextField(
               controller: _labelController,

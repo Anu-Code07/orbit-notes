@@ -1,0 +1,60 @@
+part of 'plan_trip_bloc.dart';
+
+sealed class PlanTripEvent extends Equatable {
+  const PlanTripEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class PlanTripVibeChanged extends PlanTripEvent {
+  const PlanTripVibeChanged(this.vibe);
+  final String vibe;
+
+  @override
+  List<Object?> get props => [vibe];
+}
+
+class PlanTripInterestToggled extends PlanTripEvent {
+  const PlanTripInterestToggled(this.interest);
+  final String interest;
+
+  @override
+  List<Object?> get props => [interest];
+}
+
+class PlanTripDayCountChanged extends PlanTripEvent {
+  const PlanTripDayCountChanged(this.dayCount);
+  final int dayCount;
+
+  @override
+  List<Object?> get props => [dayCount];
+}
+
+class PlanTripStartDateChanged extends PlanTripEvent {
+  const PlanTripStartDateChanged(this.startDate);
+  final DateTime startDate;
+
+  @override
+  List<Object?> get props => [startDate];
+}
+
+class PlanTripMustIncludeChanged extends PlanTripEvent {
+  const PlanTripMustIncludeChanged(this.mustInclude);
+  final String mustInclude;
+
+  @override
+  List<Object?> get props => [mustInclude];
+}
+
+class PlanTripGenerateRequested extends PlanTripEvent {
+  const PlanTripGenerateRequested();
+}
+
+class PlanTripCreateJournalRequested extends PlanTripEvent {
+  const PlanTripCreateJournalRequested();
+}
+
+class PlanTripResetRequested extends PlanTripEvent {
+  const PlanTripResetRequested();
+}
