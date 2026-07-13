@@ -21,6 +21,9 @@ class PlanTripBloc extends Bloc<PlanTripEvent, PlanTripState> {
     on<PlanTripDayCountChanged>(_onDayCountChanged);
     on<PlanTripStartDateChanged>(_onStartDateChanged);
     on<PlanTripMustIncludeChanged>(_onMustIncludeChanged);
+    on<PlanTripPaceChanged>(_onPaceChanged);
+    on<PlanTripCompanionsChanged>(_onCompanionsChanged);
+    on<PlanTripPresetApplied>(_onPresetApplied);
     on<PlanTripGenerateRequested>(_onGenerate);
     on<PlanTripCreateJournalRequested>(_onCreate);
     on<PlanTripResetRequested>(_onReset);
@@ -80,6 +83,42 @@ class PlanTripBloc extends Bloc<PlanTripEvent, PlanTripState> {
     emit(current.copyWith(mustInclude: event.mustInclude));
   }
 
+  void _onPaceChanged(
+    PlanTripPaceChanged event,
+    Emitter<PlanTripState> emit,
+  ) {
+    final current = state;
+    if (current is! PlanTripFormState) return;
+    emit(current.copyWith(pace: event.pace, clearError: true));
+  }
+
+  void _onCompanionsChanged(
+    PlanTripCompanionsChanged event,
+    Emitter<PlanTripState> emit,
+  ) {
+    final current = state;
+    if (current is! PlanTripFormState) return;
+    emit(current.copyWith(companions: event.companions, clearError: true));
+  }
+
+  void _onPresetApplied(
+    PlanTripPresetApplied event,
+    Emitter<PlanTripState> emit,
+  ) {
+    final current = state;
+    if (current is! PlanTripFormState) return;
+    emit(
+      current.copyWith(
+        dayCount: event.dayCount,
+        startDate: event.startDate,
+        vibe: event.vibe ?? current.vibe,
+        interests: event.interests ?? current.interests,
+        pace: event.pace ?? current.pace,
+        clearError: true,
+      ),
+    );
+  }
+
   Future<void> _onGenerate(
     PlanTripGenerateRequested event,
     Emitter<PlanTripState> emit,
@@ -88,7 +127,7 @@ class PlanTripBloc extends Bloc<PlanTripEvent, PlanTripState> {
     if (current is! PlanTripFormState) return;
     final vibe = current.vibe.trim();
     if (vibe.isEmpty) {
-      emit(current.copyWith(error: 'Describe the trip vibe first.'));
+      emit(current.copyWith(error: 'Pick a destination vibe first.'));
       return;
     }
 
@@ -101,9 +140,9 @@ class PlanTripBloc extends Bloc<PlanTripEvent, PlanTripState> {
         TripPlanRequest(
           vibe: vibe,
           dayCount: current.dayCount,
-          pace: 'balanced',
+          pace: current.pace,
           focus: focus,
-          companions: 'travelers',
+          companions: current.companions,
           mustInclude: current.mustInclude,
         ),
       );

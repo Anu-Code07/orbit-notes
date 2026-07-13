@@ -20,7 +20,7 @@ class NominatimPlaceSearchDataSource implements PlaceSearchRepository {
       'q': query,
       'format': 'json',
       'addressdetails': '0',
-      'limit': '6',
+      'limit': '10',
     });
 
     try {

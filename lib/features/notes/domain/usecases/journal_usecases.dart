@@ -131,11 +131,3 @@ class UpsertPin {
 
   Future<MapPin> call(MapPin pin) => _repository.upsertPin(pin);
 }
-
-class SeedDemoIfEmpty {
-  SeedDemoIfEmpty(this._repository);
-
-  final NotesRepository _repository;
-
-  Future<void> call() => _repository.seedDemoIfEmpty();
-}

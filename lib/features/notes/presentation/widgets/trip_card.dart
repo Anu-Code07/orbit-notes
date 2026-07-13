@@ -18,14 +18,12 @@ class TripCard extends StatelessWidget {
     required this.index,
     required this.onTap,
     this.onDelete,
-    this.isExample = false,
   });
 
   final Trip trip;
   final int index;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
-  final bool isExample;
 
   @override
   Widget build(BuildContext context) {
@@ -97,31 +95,6 @@ class TripCard extends StatelessWidget {
                               Colors.black.withValues(alpha: 0.05),
                               Colors.black.withValues(alpha: 0.35),
                             ],
-                          ),
-                        ),
-                      ),
-                    if (isExample)
-                      Positioned(
-                        top: spacing.md,
-                        left: spacing.md,
-                        child: FrostedGlass(
-                          borderRadius: radii.smRadius,
-                          tintOpacity: 0.72,
-                          blurSigma: 12,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          child: Text(
-                            'EXAMPLE',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  color: colors.ink,
-                                  letterSpacing: 1.4,
-                                  fontSize: 10,
-                                ),
                           ),
                         ),
                       ),
@@ -206,11 +179,9 @@ class TripCard extends StatelessWidget {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(isExample ? 'Remove example trip?' : 'Delete trip?'),
+            title: const Text('Delete trip?'),
             content: Text(
-              isExample
-                  ? 'This sample journal is only here to teach how Orbit works. You can delete it safely.'
-                  : '“${trip.title}” and its days, entries, and photos will be removed from this device.',
+              '“${trip.title}” and its days, entries, and photos will be removed from this device.',
             ),
             actions: [
               TextButton(

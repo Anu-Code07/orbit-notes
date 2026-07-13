@@ -8,24 +8,36 @@ sealed class PlanTripState extends Equatable {
 }
 
 class PlanTripFormState extends PlanTripState {
+  /// Next Friday (or next week if today is Friday) — classic getaway default.
+  static DateTime smartStartDate() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final weekday = today.weekday; // Mon=1 … Fri=5
+    var daysUntilFriday = DateTime.friday - weekday;
+    if (daysUntilFriday <= 0) daysUntilFriday += 7;
+    return today.add(Duration(days: daysUntilFriday));
+  }
+
   PlanTripFormState({
     this.vibe = '',
-    this.interests = const {},
-    this.dayCount = 4,
+    Set<String>? interests,
+    this.dayCount = 3,
     this.mustInclude = '',
+    this.pace = 'balanced',
+    this.companions = 'solo',
     DateTime? startDate,
     this.error,
-  }) : startDate = startDate ??
-            DateTime(
-              DateTime.now().year,
-              DateTime.now().month,
-              DateTime.now().day,
-            );
+  })  : interests = interests ?? _defaultInterests,
+        startDate = startDate ?? smartStartDate();
+
+  static const _defaultInterests = {'Food trail', 'Slow mornings'};
 
   final String vibe;
   final Set<String> interests;
   final int dayCount;
   final String mustInclude;
+  final String pace;
+  final String companions;
   final DateTime startDate;
   final String? error;
 
@@ -34,6 +46,8 @@ class PlanTripFormState extends PlanTripState {
     Set<String>? interests,
     int? dayCount,
     String? mustInclude,
+    String? pace,
+    String? companions,
     DateTime? startDate,
     String? error,
     bool clearError = false,
@@ -43,14 +57,24 @@ class PlanTripFormState extends PlanTripState {
       interests: interests ?? this.interests,
       dayCount: dayCount ?? this.dayCount,
       mustInclude: mustInclude ?? this.mustInclude,
+      pace: pace ?? this.pace,
+      companions: companions ?? this.companions,
       startDate: startDate ?? this.startDate,
       error: clearError ? null : (error ?? this.error),
     );
   }
 
   @override
-  List<Object?> get props =>
-      [vibe, interests, dayCount, mustInclude, startDate, error];
+  List<Object?> get props => [
+        vibe,
+        interests,
+        dayCount,
+        mustInclude,
+        pace,
+        companions,
+        startDate,
+        error,
+      ];
 }
 
 class PlanTripGenerating extends PlanTripState {

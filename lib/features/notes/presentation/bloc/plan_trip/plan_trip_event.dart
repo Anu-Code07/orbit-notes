@@ -47,6 +47,41 @@ class PlanTripMustIncludeChanged extends PlanTripEvent {
   List<Object?> get props => [mustInclude];
 }
 
+class PlanTripPaceChanged extends PlanTripEvent {
+  const PlanTripPaceChanged(this.pace);
+  final String pace;
+
+  @override
+  List<Object?> get props => [pace];
+}
+
+class PlanTripCompanionsChanged extends PlanTripEvent {
+  const PlanTripCompanionsChanged(this.companions);
+  final String companions;
+
+  @override
+  List<Object?> get props => [companions];
+}
+
+class PlanTripPresetApplied extends PlanTripEvent {
+  const PlanTripPresetApplied({
+    required this.dayCount,
+    required this.startDate,
+    this.vibe,
+    this.interests,
+    this.pace,
+  });
+
+  final int dayCount;
+  final DateTime startDate;
+  final String? vibe;
+  final Set<String>? interests;
+  final String? pace;
+
+  @override
+  List<Object?> get props => [dayCount, startDate, vibe, interests, pace];
+}
+
 class PlanTripGenerateRequested extends PlanTripEvent {
   const PlanTripGenerateRequested();
 }

@@ -8,12 +8,7 @@ sealed class TripsEvent extends Equatable {
 }
 
 class LoadTrips extends TripsEvent {
-  const LoadTrips({this.seedDemo = true});
-
-  final bool seedDemo;
-
-  @override
-  List<Object?> get props => [seedDemo];
+  const LoadTrips();
 }
 
 class RefreshTrips extends TripsEvent {

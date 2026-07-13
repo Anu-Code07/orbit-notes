@@ -8,9 +8,11 @@ import 'package:orbit_notes/features/auth/domain/repositories/auth_repository.da
 import 'package:orbit_notes/features/auth/domain/usecases/auth_usecases.dart';
 import 'package:orbit_notes/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:orbit_notes/features/notes/data/datasources/app_database.dart';
+import 'package:orbit_notes/features/notes/data/datasources/fallback_trip_planner_datasource.dart';
 import 'package:orbit_notes/features/notes/data/datasources/groq_trip_planner_datasource.dart';
 import 'package:orbit_notes/features/notes/data/datasources/nominatim_place_search_datasource.dart';
 import 'package:orbit_notes/features/notes/data/datasources/place_image_service.dart';
+import 'package:orbit_notes/features/notes/data/datasources/supabase_trip_planner_datasource.dart';
 import 'package:orbit_notes/features/notes/data/repositories/notes_repository_impl.dart';
 import 'package:orbit_notes/features/notes/data/sync/orbit_cloud_sync.dart';
 import 'package:orbit_notes/features/notes/domain/repositories/notes_repository.dart';
@@ -80,7 +82,6 @@ Future<void> configureDependencies({required AppPrefs prefs}) async {
   getIt.registerLazySingleton(() => GetPinsForTrip(repo));
   getIt.registerLazySingleton(() => GetPinForEntry(repo));
   getIt.registerLazySingleton(() => UpsertPin(repo));
-  getIt.registerLazySingleton(() => SeedDemoIfEmpty(repo));
 
   getIt.registerLazySingleton(PlaceImageService.new);
   getIt.registerLazySingleton<PlaceSearchRepository>(
@@ -89,7 +90,10 @@ Future<void> configureDependencies({required AppPrefs prefs}) async {
   getIt.registerLazySingleton(() => SearchPlaces(getIt()));
 
   getIt.registerLazySingleton<TripPlannerRepository>(
-    GroqTripPlannerDataSource.new,
+    () => FallbackTripPlannerDataSource(
+      primary: SupabaseTripPlannerDataSource(),
+      fallback: GroqTripPlannerDataSource(),
+    ),
   );
   getIt.registerLazySingleton(() => PlanTripWithAi(getIt()));
   getIt.registerLazySingleton(() => PersistPlannedTrip(getIt()));
@@ -97,7 +101,6 @@ Future<void> configureDependencies({required AppPrefs prefs}) async {
   getIt.registerFactory(
     () => TripsBloc(
       getTrips: getIt(),
-      seedDemoIfEmpty: getIt(),
       deleteTrip: getIt(),
     ),
   );

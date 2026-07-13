@@ -114,19 +114,78 @@ class _PlanTripView extends StatelessWidget {
   }
 }
 
-class _PlanComposer extends StatelessWidget {
+class _PlanComposer extends StatefulWidget {
   const _PlanComposer({required this.form});
 
   final PlanTripFormState form;
 
-  static const interests = [
+  @override
+  State<_PlanComposer> createState() => _PlanComposerState();
+}
+
+class _PlanComposerState extends State<_PlanComposer> {
+  late final TextEditingController _vibeController;
+  late final TextEditingController _mustController;
+
+  static const _vibePresets = [
+    ('Kyoto spring', 'Kyoto in cherry season — temples, tea, slow mornings'),
+    ('Lisbon light', 'Lisbon hills & tiled streets — cafés, miradouros, tram rides'),
+    ('Bali quiet', 'Quiet Bali — rice terraces, ocean evenings, yoga dawns'),
+    ('NYC weekend', 'New York long weekend — museums, pizza, skyline walks'),
+    ('Amalfi coast', 'Amalfi coast — cliffs, lemon groves, swimming coves'),
+    ('Iceland road', 'Iceland road trip — waterfalls, hot springs, midnight sun'),
+  ];
+
+  static const _interests = [
     ('Epic views', Icons.terrain_outlined, Color(0xFFE8B94A)),
     ('Among trees', Icons.park_outlined, Color(0xFFA4D4C5)),
     ('Food trail', Icons.restaurant_outlined, Color(0xFFFF6B5A)),
     ('Quiet towns', Icons.cottage_outlined, Color(0xFF1A3A3A)),
     ('Night lights', Icons.nightlife_outlined, Color(0xFFB8A4ED)),
     ('Slow mornings', Icons.wb_twilight_outlined, Color(0xFFFFB084)),
+    ('Museums', Icons.museum_outlined, Color(0xFF6B7C8A)),
+    ('Beaches', Icons.beach_access_outlined, Color(0xFF5B9BD5)),
   ];
+
+  static const _paces = [
+    ('slow', 'Slow', 'Linger'),
+    ('balanced', 'Balanced', 'Easy mix'),
+    ('packed', 'Packed', 'See more'),
+  ];
+
+  static const _companions = [
+    ('solo', 'Solo', Icons.person_outline),
+    ('couple', 'Couple', Icons.favorite_border),
+    ('friends', 'Friends', Icons.groups_outlined),
+    ('family', 'Family', Icons.home_outlined),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _vibeController = TextEditingController(text: widget.form.vibe);
+    _mustController = TextEditingController(text: widget.form.mustInclude);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlanComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.form.vibe != widget.form.vibe &&
+        _vibeController.text != widget.form.vibe) {
+      _vibeController.text = widget.form.vibe;
+    }
+  }
+
+  @override
+  void dispose() {
+    _vibeController.dispose();
+    _mustController.dispose();
+    super.dispose();
+  }
+
+  PlanTripFormState get form => widget.form;
+
+  DateTime get _nextFriday => PlanTripFormState.smartStartDate();
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +193,12 @@ class _PlanComposer extends StatelessWidget {
     final spacing = context.spacing;
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(spacing.lg, spacing.md, spacing.lg, spacing.section),
+      padding: EdgeInsets.fromLTRB(
+        spacing.lg,
+        spacing.md,
+        spacing.lg,
+        spacing.section,
+      ),
       children: [
         Text(
           'Plan your\nPerfect Trip',
@@ -147,32 +211,121 @@ class _PlanComposer extends StatelessWidget {
             letterSpacing: -1,
           ),
         ),
+        SizedBox(height: spacing.sm),
+        Text(
+          'Smart defaults ready — tweak what you care about.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colors.muted,
+              ),
+        ),
+        SizedBox(height: spacing.lg),
+        _sectionLabel(context, 'LENGTH'),
+        SizedBox(height: spacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _LengthChip(
+                label: 'Weekend',
+                hint: '3 days',
+                selected: form.dayCount == 3,
+                onTap: () => context.read<PlanTripBloc>().add(
+                      PlanTripPresetApplied(
+                        dayCount: 3,
+                        startDate: _nextFriday,
+                        pace: 'balanced',
+                        interests: const {'Food trail', 'Slow mornings'},
+                      ),
+                    ),
+              ),
+            ),
+            SizedBox(width: spacing.sm),
+            Expanded(
+              child: _LengthChip(
+                label: 'Week',
+                hint: '7 days',
+                selected: form.dayCount == 7,
+                onTap: () => context.read<PlanTripBloc>().add(
+                      PlanTripPresetApplied(
+                        dayCount: 7,
+                        startDate: _nextFriday,
+                        pace: 'slow',
+                        interests: const {
+                          'Among trees',
+                          'Quiet towns',
+                          'Food trail',
+                        },
+                      ),
+                    ),
+              ),
+            ),
+            SizedBox(width: spacing.sm),
+            Expanded(
+              child: _LengthChip(
+                label: 'Custom',
+                hint: '${form.dayCount} days',
+                selected: form.dayCount != 3 && form.dayCount != 7,
+                onTap: () => _pickDays(context, form.dayCount),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: spacing.md),
+        _DayStepper(
+          dayCount: form.dayCount,
+          onChanged: (days) => context
+              .read<PlanTripBloc>()
+              .add(PlanTripDayCountChanged(days)),
+        ),
         SizedBox(height: spacing.xl),
         Transform.rotate(
-          angle: -0.03,
+          angle: -0.02,
           child: _SoftCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Where should the story go?',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
+                _sectionLabel(context, 'DESTINATION VIBE'),
                 SizedBox(height: spacing.md),
                 TextField(
+                  controller: _vibeController,
                   onChanged: (v) => context
                       .read<PlanTripBloc>()
                       .add(PlanTripVibeChanged(v)),
                   textCapitalization: TextCapitalization.sentences,
+                  maxLines: 2,
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    height: 1.35,
+                  ),
                   decoration: InputDecoration(
-                    hintText: 'Kyoto spring · temples · slow cafés',
-                    suffixIcon: Icon(
-                      Icons.search,
-                      color: colors.mutedSoft,
-                    ),
+                    hintText: 'Where should the story go?',
+                    hintStyle: TextStyle(color: colors.mutedSoft),
                     filled: true,
                     fillColor: colors.surfaceSoft,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: EdgeInsets.all(spacing.md),
                   ),
+                ),
+                SizedBox(height: spacing.md),
+                Wrap(
+                  spacing: spacing.sm,
+                  runSpacing: spacing.sm,
+                  children: _vibePresets.map((preset) {
+                    final selected = form.vibe == preset.$2;
+                    return _PillChip(
+                      label: preset.$1,
+                      selected: selected,
+                      onTap: () {
+                        _vibeController.text = preset.$2;
+                        context
+                            .read<PlanTripBloc>()
+                            .add(PlanTripVibeChanged(preset.$2));
+                      },
+                    );
+                  }).toList(),
                 ),
               ],
             ),
@@ -180,39 +333,24 @@ class _PlanComposer extends StatelessWidget {
         ),
         SizedBox(height: spacing.lg),
         Transform.rotate(
-          angle: 0.025,
+          angle: 0.018,
           child: _SoftCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  ':: POINTS OF INTEREST',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        letterSpacing: 1.4,
-                        color: colors.muted,
-                      ),
-                ),
+                _sectionLabel(context, 'POINTS OF INTEREST'),
                 SizedBox(height: spacing.md),
                 Wrap(
                   spacing: spacing.sm,
                   runSpacing: spacing.sm,
-                  children: interests.map((item) {
+                  children: _interests.map((item) {
                     final selected = form.interests.contains(item.$1);
-                    return FilterChip(
+                    return _InterestChip(
+                      label: item.$1,
+                      icon: item.$2,
+                      accent: item.$3,
                       selected: selected,
-                      showCheckmark: false,
-                      avatar: Icon(item.$2, size: 16, color: item.$3),
-                      label: Text(item.$1.toUpperCase()),
-                      labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            letterSpacing: 0.6,
-                            color: colors.ink,
-                          ),
-                      selectedColor: colors.surfaceStrong,
-                      backgroundColor: colors.surfaceSoft,
-                      side: BorderSide(
-                        color: selected ? colors.ink : colors.hairline,
-                      ),
-                      onSelected: (_) => context
+                      onTap: () => context
                           .read<PlanTripBloc>()
                           .add(PlanTripInterestToggled(item.$1)),
                     );
@@ -221,42 +359,76 @@ class _PlanComposer extends StatelessWidget {
                 SizedBox(height: spacing.lg),
                 Divider(color: colors.hairline),
                 SizedBox(height: spacing.lg),
-                Text(
-                  ':: TRIP SHAPE',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        letterSpacing: 1.4,
-                        color: colors.muted,
-                      ),
-                ),
-                SizedBox(height: spacing.md),
+                _sectionLabel(context, 'PACE'),
+                SizedBox(height: spacing.sm),
                 Row(
-                  children: [
-                    Expanded(
-                      child: _MetricTile(
-                        icon: Icons.umbrella_outlined,
-                        value: '${form.dayCount}',
-                        label: 'VACATION DAYS',
-                        onTap: () => _pickDays(context, form.dayCount),
+                  children: _paces.map((pace) {
+                    final selected = form.pace == pace.$1;
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: pace.$1 == _paces.last.$1 ? 0 : spacing.sm,
+                        ),
+                        child: _SegmentCard(
+                          title: pace.$2,
+                          subtitle: pace.$3,
+                          selected: selected,
+                          onTap: () => context
+                              .read<PlanTripBloc>()
+                              .add(PlanTripPaceChanged(pace.$1)),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: spacing.md),
-                    Expanded(
-                      child: _MetricTile(
-                        icon: Icons.calendar_today_outlined,
-                        value: DateFormat('d MMM').format(form.startDate),
-                        label: 'STARTS',
-                        onTap: () => _pickStart(context, form.startDate),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: spacing.lg),
+                _sectionLabel(context, 'WITH'),
+                SizedBox(height: spacing.sm),
+                Row(
+                  children: _companions.map((c) {
+                    final selected = form.companions == c.$1;
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: c.$1 == _companions.last.$1 ? 0 : spacing.sm,
+                        ),
+                        child: _IconSegment(
+                          icon: c.$3,
+                          label: c.$2,
+                          selected: selected,
+                          onTap: () => context
+                              .read<PlanTripBloc>()
+                              .add(PlanTripCompanionsChanged(c.$1)),
+                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: spacing.lg),
+                Divider(color: colors.hairline),
+                SizedBox(height: spacing.lg),
+                _sectionLabel(context, 'STARTS'),
+                SizedBox(height: spacing.md),
+                _MetricTile(
+                  icon: Icons.calendar_today_outlined,
+                  value: DateFormat('EEE d MMM').format(form.startDate),
+                  label: 'TAP TO CHANGE',
+                  onTap: () => _pickStart(context, form.startDate),
                 ),
                 SizedBox(height: spacing.md),
                 TextField(
+                  controller: _mustController,
                   onChanged: (v) => context
                       .read<PlanTripBloc>()
                       .add(PlanTripMustIncludeChanged(v)),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Must include (optional)',
+                    filled: true,
+                    fillColor: colors.surfaceSoft,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ],
@@ -282,7 +454,9 @@ class _PlanComposer extends StatelessWidget {
         ),
         SizedBox(height: spacing.sm),
         Text(
-          'AI drafts days you can edit into your journal.',
+          form.vibe.isEmpty
+              ? 'Pick a vibe preset or type your own destination dream.'
+              : '${form.dayCount} days · ${form.pace} · ${form.companions}',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colors.muted,
@@ -292,22 +466,51 @@ class _PlanComposer extends StatelessWidget {
     );
   }
 
+  Widget _sectionLabel(BuildContext context, String text) {
+    return Text(
+      ':: $text',
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            letterSpacing: 1.5,
+            color: context.colors.muted,
+          ),
+    );
+  }
+
   Future<void> _pickDays(BuildContext context, int current) async {
     final picked = await showModalBottomSheet<int>(
       context: context,
       backgroundColor: context.colors.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) {
         return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: List.generate(10, (i) {
-              final days = i + 2;
-              return ListTile(
-                title: Text('$days days'),
-                trailing: days == current ? const Icon(Icons.check) : null,
-                onTap: () => Navigator.pop(context, days),
-              );
-            }),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Custom days',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: List.generate(13, (i) {
+                      final days = i + 2;
+                      return ListTile(
+                        title: Text('$days days'),
+                        trailing:
+                            days == current ? const Icon(Icons.check) : null,
+                        onTap: () => Navigator.pop(context, days),
+                      );
+                    }),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -321,12 +524,345 @@ class _PlanComposer extends StatelessWidget {
     final picked = await showDatePicker(
       context: context,
       initialDate: current,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
     );
     if (picked != null && context.mounted) {
       context.read<PlanTripBloc>().add(PlanTripStartDateChanged(picked));
     }
+  }
+}
+
+class _LengthChip extends StatelessWidget {
+  const _LengthChip({
+    required this.label,
+    required this.hint,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String hint;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Material(
+      color: selected ? colors.brandCoral.withValues(alpha: 0.16) : colors.canvas,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? colors.brandCoral : colors.hairline,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.fraunces(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: colors.ink,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                hint,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: colors.muted,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayStepper extends StatelessWidget {
+  const _DayStepper({
+    required this.dayCount,
+    required this.onChanged,
+  });
+
+  final int dayCount;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.canvas,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colors.hairline),
+        boxShadow: [
+          BoxShadow(
+            color: colors.ink.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Text(
+            'Days',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const Spacer(),
+          _StepperButton(
+            icon: Icons.remove,
+            onTap: dayCount <= 2 ? null : () => onChanged(dayCount - 1),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              '$dayCount',
+              style: GoogleFonts.fraunces(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: colors.ink,
+              ),
+            ),
+          ),
+          _StepperButton(
+            icon: Icons.add,
+            onTap: dayCount >= 14 ? null : () => onChanged(dayCount + 1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepperButton extends StatelessWidget {
+  const _StepperButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Material(
+      color: colors.surfaceSoft,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(
+            icon,
+            size: 20,
+            color: onTap == null ? colors.mutedSoft : colors.ink,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PillChip extends StatelessWidget {
+  const _PillChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Material(
+      color: selected ? colors.ink : colors.surfaceSoft,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: selected ? colors.onPrimary : colors.ink,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InterestChip extends StatelessWidget {
+  const _InterestChip({
+    required this.label,
+    required this.icon,
+    required this.accent,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color accent;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Material(
+      color: selected ? accent.withValues(alpha: 0.16) : colors.surfaceSoft,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected ? accent : colors.hairline,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: accent),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colors.ink,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SegmentCard extends StatelessWidget {
+  const _SegmentCard({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Material(
+      color: selected ? colors.ink : colors.surfaceSoft,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: selected ? colors.onPrimary : colors.ink,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: selected
+                          ? colors.onPrimary.withValues(alpha: 0.7)
+                          : colors.muted,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _IconSegment extends StatelessWidget {
+  const _IconSegment({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Material(
+      color: selected ? colors.brandCoral.withValues(alpha: 0.15) : colors.surfaceSoft,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? colors.brandCoral : colors.hairline,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selected ? colors.brandCoral : colors.muted,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colors.ink,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

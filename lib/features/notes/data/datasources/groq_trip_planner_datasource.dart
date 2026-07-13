@@ -2,62 +2,81 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import 'package:orbit_notes/core/config/groq_config.dart';
+import 'package:orbit_notes/core/config/groq_secrets.dart';
 import 'package:orbit_notes/core/failure/failure.dart';
 import 'package:orbit_notes/features/notes/domain/entities/planned_trip.dart';
 import 'package:orbit_notes/features/notes/domain/repositories/trip_planner_repository.dart';
 
+/// Local/dev planner via Groq. Uses gitignored [GroqSecrets.apiKey].
+/// Prefer the Supabase `plan-trip` function in production.
 class GroqTripPlannerDataSource implements TripPlannerRepository {
   GroqTripPlannerDataSource({http.Client? client})
       : _client = client ?? http.Client();
 
   final http.Client _client;
 
+  static const _model = 'llama-3.3-70b-versatile';
+  static final _endpoint =
+      Uri.parse('https://api.groq.com/openai/v1/chat/completions');
+
   @override
   Future<PlannedTrip> planTrip(TripPlanRequest request) async {
-    if (!GroqConfig.isConfigured) {
+    final apiKey = GroqSecrets.apiKey.trim();
+    if (apiKey.isEmpty) {
       throw const UnexpectedFailure(
-        'Add GROQ_API_KEY via --dart-define to plan trips with AI.',
+        'Trip planner is not set up yet. Deploy plan-trip or add a local Groq key.',
       );
     }
 
-    final uri = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
-    final body = {
-      'model': GroqConfig.model,
-      'temperature': 0.7,
-      'response_format': {'type': 'json_object'},
-      'messages': [
-        {
-          'role': 'system',
-          'content':
-              'You are Orbit, a poetic travel journal planner. '
-              'Reply with JSON only matching: '
-              '{"title":string,"destination":string,"summary":string,'
-              '"days":[{"dayIndex":number,"title":string,"placeHint":string,'
-              '"entryPrompt":string}]}. '
-              'dayIndex starts at 1. placeHint MUST be a real searchable '
-              'landmark or neighborhood name (good for photos). '
-              'entryPrompt is a short journal spark '
-              '(1-2 sentences). Keep titles evocative, not generic.',
-        },
-        {
-          'role': 'user',
-          'content': _userPrompt(request),
-        },
-      ],
-    };
+    final vibe = request.vibe.trim();
+    if (vibe.length < 2) {
+      throw const UnexpectedFailure('Describe the trip vibe first.');
+    }
+
+    final dayCount = request.dayCount.clamp(1, 14);
+    final must = request.mustInclude.trim().isEmpty
+        ? 'none'
+        : request.mustInclude.trim();
 
     try {
-      final response = await _client
-          .post(
-            uri,
-            headers: {
-              'Authorization': 'Bearer ${GroqConfig.apiKey}',
-              'Content-Type': 'application/json',
+      final response = await _client.post(
+        _endpoint,
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'model': _model,
+          'temperature': 0.7,
+          'response_format': {'type': 'json_object'},
+          'messages': [
+            {
+              'role': 'system',
+              'content':
+                  'You are Orbit, a poetic travel journal planner. '
+                  'Reply with JSON only matching: '
+                  '{"title":string,"destination":string,"summary":string,'
+                  '"days":[{"dayIndex":number,"title":string,"placeHint":string,'
+                  '"entryPrompt":string}]}. '
+                  'dayIndex starts at 1. placeHint MUST be a real searchable '
+                  'landmark or neighborhood name (good for photos). '
+                  'entryPrompt is a short journal spark (1-2 sentences). '
+                  'Keep titles evocative, not generic.',
             },
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: 45));
+            {
+              'role': 'user',
+              'content':
+                  'Plan a $dayCount-day travel journal for Orbit Notes.\n'
+                  'Vibe: $vibe\n'
+                  'Pace: ${request.pace}\n'
+                  'Focus: ${request.focus}\n'
+                  'Companions: ${request.companions}\n'
+                  'Must include: $must\n'
+                  'Return exactly $dayCount days.',
+            },
+          ],
+        }),
+      );
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw UnexpectedFailure(
@@ -65,44 +84,32 @@ class GroqTripPlannerDataSource implements TripPlannerRepository {
         );
       }
 
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-      final choices = decoded['choices'];
-      if (choices is! List || choices.isEmpty) {
-        throw const UnexpectedFailure('AI returned an empty plan.');
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map) {
+        throw const UnexpectedFailure('Could not read the AI plan. Try again.');
       }
-      final message = choices.first as Map<String, dynamic>;
+
       final content =
-          ((message['message'] as Map?)?['content'] as String?)?.trim();
+          decoded['choices']?[0]?['message']?['content']?.toString().trim();
       if (content == null || content.isEmpty) {
         throw const UnexpectedFailure('AI returned an empty plan.');
       }
 
-      final planJson = jsonDecode(content) as Map<String, dynamic>;
-      return _parsePlan(planJson, request.dayCount);
+      final planRaw = jsonDecode(content);
+      if (planRaw is! Map) {
+        throw const UnexpectedFailure('AI returned an empty plan.');
+      }
+
+      return _parsePlan(Map<String, dynamic>.from(planRaw), dayCount);
     } on Failure {
       rethrow;
     } on FormatException {
-      throw const UnexpectedFailure('Could not read the AI plan. Try again.');
+      throw const UnexpectedFailure('AI plan was incomplete. Try again.');
     } catch (_) {
       throw const UnexpectedFailure(
-        'Could not reach Groq. Check connection and API key.',
+        'Could not reach trip planner. Check connection.',
       );
     }
-  }
-
-  String _userPrompt(TripPlanRequest request) {
-    final must = request.mustInclude.trim().isEmpty
-        ? 'none'
-        : request.mustInclude.trim();
-    return '''
-Plan a ${request.dayCount}-day travel journal for Orbit Notes.
-Vibe: ${request.vibe}
-Pace: ${request.pace}
-Focus: ${request.focus}
-Companions: ${request.companions}
-Must include: $must
-Return exactly ${request.dayCount} days.
-''';
   }
 
   PlannedTrip _parsePlan(Map<String, dynamic> json, int dayCount) {
@@ -122,14 +129,13 @@ Return exactly ${request.dayCount} days.
       final dayTitle = '${map['title'] ?? 'Day $index'}'.trim();
       final prompt = '${map['entryPrompt'] ?? ''}'.trim();
       if (prompt.isEmpty) continue;
+      final hint = '${map['placeHint'] ?? ''}'.trim();
       days.add(
         PlannedTripDay(
           dayIndex: index,
           title: dayTitle.isEmpty ? 'Day $index' : dayTitle,
           entryPrompt: prompt,
-          placeHint: '${map['placeHint'] ?? ''}'.trim().isEmpty
-              ? null
-              : '${map['placeHint']}'.trim(),
+          placeHint: hint.isEmpty ? null : hint,
         ),
       );
     }
@@ -139,12 +145,11 @@ Return exactly ${request.dayCount} days.
     }
 
     days.sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
-    final trimmed = days.take(dayCount).toList();
     return PlannedTrip(
       title: title,
       destination: destination,
       summary: summary.isEmpty ? 'A trip shaped for your journal.' : summary,
-      days: trimmed,
+      days: days.take(dayCount).toList(),
     );
   }
 }

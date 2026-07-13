@@ -358,8 +358,10 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
   late final TextEditingController _labelController;
   late final TextEditingController _searchController;
   late final MapController _mapController;
+  late final FocusNode _searchFocus;
   bool _locating = false;
   bool _searching = false;
+  bool _searchExpanded = false;
   String? _searchError;
   List<PlaceSearchResult> _results = const [];
   Timer? _debounce;
@@ -371,6 +373,7 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
     _labelController = TextEditingController(text: widget.label);
     _searchController = TextEditingController();
     _mapController = MapController();
+    _searchFocus = FocusNode();
   }
 
   @override
@@ -378,8 +381,27 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
     _debounce?.cancel();
     _labelController.dispose();
     _searchController.dispose();
+    _searchFocus.dispose();
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() => _searchExpanded = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocus.requestFocus();
+    });
+  }
+
+  void _closeSearch() {
+    _debounce?.cancel();
+    _searchFocus.unfocus();
+    setState(() {
+      _searchExpanded = false;
+      _results = const [];
+      _searchError = null;
+      _searching = false;
+    });
   }
 
   void _onSearchChanged(String value) {
@@ -437,10 +459,11 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
       _results = const [];
       _searchError = null;
       _searchController.text = result.name;
+      _searchExpanded = false;
     });
     _labelController.text = result.name;
     _mapController.move(point, 14);
-    FocusScope.of(context).unfocus();
+    _searchFocus.unfocus();
   }
 
   Future<void> _jumpToGps() async {
@@ -488,73 +511,6 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             SizedBox(height: spacing.sm),
-            Text(
-              'Search a place, tap the map, or jump to GPS.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colors.muted,
-                  ),
-            ),
-            SizedBox(height: spacing.md),
-            TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: 'Search a place…',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searching
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-            if (_results.isNotEmpty)
-              Flexible(
-                flex: 0,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 140),
-                  child: Material(
-                    color: colors.surfaceSoft,
-                    borderRadius: BorderRadius.circular(12),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: _results.length,
-                      separatorBuilder: (_, __) =>
-                          Divider(height: 1, color: colors.hairline),
-                      itemBuilder: (context, index) {
-                        final item = _results[index];
-                        return ListTile(
-                          dense: true,
-                          title: Text(item.name),
-                          subtitle: Text(
-                            item.displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          onTap: () => _selectResult(item),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              )
-            else if (_searchError != null)
-              Padding(
-                padding: EdgeInsets.only(top: spacing.xs),
-                child: Text(
-                  _searchError!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colors.muted,
-                      ),
-                ),
-              ),
-            SizedBox(height: spacing.md),
             TextField(
               controller: _labelController,
               decoration: const InputDecoration(hintText: 'Label'),
@@ -570,7 +526,13 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
                       options: MapOptions(
                         initialCenter: _point,
                         initialZoom: 12,
-                        onTap: (_, latLng) => setState(() => _point = latLng),
+                        onTap: (_, latLng) {
+                          if (_searchExpanded) {
+                            _closeSearch();
+                            return;
+                          }
+                          setState(() => _point = latLng);
+                        },
                       ),
                       children: [
                         TileLayer(
@@ -595,16 +557,42 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
                       ],
                     ),
                     Positioned(
-                      right: spacing.sm,
+                      left: spacing.sm,
                       top: spacing.sm,
-                      child: OrbitButton(
-                        label: _locating ? '…' : 'GPS',
-                        icon: Icons.my_location,
-                        variant: OrbitButtonVariant.frost,
-                        isLoading: _locating,
-                        onPressed: _locating ? null : _jumpToGps,
-                      ),
+                      right: spacing.sm,
+                      child: _searchExpanded
+                          ? _MapSearchPanel(
+                              controller: _searchController,
+                              focusNode: _searchFocus,
+                              searching: _searching,
+                              results: _results,
+                              error: _searchError,
+                              onChanged: _onSearchChanged,
+                              onClose: _closeSearch,
+                              onSelect: _selectResult,
+                            )
+                          : Align(
+                              alignment: Alignment.centerLeft,
+                              child: OrbitButton(
+                                label: 'Search places',
+                                icon: Icons.search,
+                                variant: OrbitButtonVariant.frost,
+                                onPressed: _openSearch,
+                              ),
+                            ),
                     ),
+                    if (!_searchExpanded)
+                      Positioned(
+                        right: spacing.sm,
+                        top: spacing.sm,
+                        child: OrbitButton(
+                          label: _locating ? '…' : 'GPS',
+                          icon: Icons.my_location,
+                          variant: OrbitButtonVariant.frost,
+                          isLoading: _locating,
+                          onPressed: _locating ? null : _jumpToGps,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -622,6 +610,137 @@ class _PlacePinPickerSheetState extends State<PlacePinPickerSheet> {
               },
             ),
             SizedBox(height: MediaQuery.paddingOf(context).bottom),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MapSearchPanel extends StatelessWidget {
+  const _MapSearchPanel({
+    required this.controller,
+    required this.focusNode,
+    required this.searching,
+    required this.results,
+    required this.error,
+    required this.onChanged,
+    required this.onClose,
+    required this.onSelect,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool searching;
+  final List<PlaceSearchResult> results;
+  final String? error;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClose;
+  final ValueChanged<PlaceSearchResult> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final spacing = context.spacing;
+
+    return Material(
+      color: colors.canvas.withValues(alpha: 0.96),
+      elevation: 8,
+      shadowColor: colors.ink.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(16),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 320),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                spacing.sm,
+                spacing.sm,
+                spacing.xs,
+                spacing.sm,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      onChanged: onChanged,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: 'Search places to pin…',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: searching
+                            ? const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: colors.surfaceSoft,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close search',
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            if (results.isNotEmpty)
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.only(bottom: spacing.sm),
+                  itemCount: results.length,
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: colors.hairline),
+                  itemBuilder: (context, index) {
+                    final item = results[index];
+                    return ListTile(
+                      dense: true,
+                      leading: Icon(
+                        Icons.place_outlined,
+                        color: colors.brandCoral,
+                      ),
+                      title: Text(item.name),
+                      subtitle: Text(
+                        item.displayName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () => onSelect(item),
+                    );
+                  },
+                ),
+              )
+            else if (error != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  spacing.md,
+                  0,
+                  spacing.md,
+                  spacing.md,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    error!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colors.muted,
+                        ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

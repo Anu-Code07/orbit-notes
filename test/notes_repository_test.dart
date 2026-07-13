@@ -80,18 +80,6 @@ void main() {
       expect(entries, hasLength(1));
       expect(entries.first.placeName, 'Alfama');
     });
-
-    test('seedDemoIfEmpty seeds one example trip once', () async {
-      await repository.seedDemoIfEmpty();
-      final first = await repository.getTrips();
-      expect(first, hasLength(1));
-      expect(first.first.id, 'orbit-example-trip');
-      expect(first.first.title, contains('Example'));
-
-      await repository.seedDemoIfEmpty();
-      final second = await repository.getTrips();
-      expect(second.length, first.length);
-    });
   });
 
   group('Use cases', () {

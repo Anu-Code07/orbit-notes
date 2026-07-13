@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 import 'package:orbit_notes/core/di/injection.dart';
-import 'package:orbit_notes/core/prefs/app_prefs.dart';
 import 'package:orbit_notes/core/theme/app_colors.dart';
 import 'package:orbit_notes/core/theme/app_radii.dart';
 import 'package:orbit_notes/core/theme/app_spacing.dart';
@@ -27,36 +24,8 @@ class TripsHomePage extends StatelessWidget {
   }
 }
 
-class _TripsHomeView extends StatefulWidget {
+class _TripsHomeView extends StatelessWidget {
   const _TripsHomeView();
-
-  @override
-  State<_TripsHomeView> createState() => _TripsHomeViewState();
-}
-
-class _TripsHomeViewState extends State<_TripsHomeView> {
-  final _newTripKey = GlobalKey();
-  final _exampleTripKey = GlobalKey();
-  final _accountKey = GlobalKey();
-  bool _tourScheduled = false;
-
-  void _maybeStartTour(TripsState state) {
-    if (_tourScheduled) return;
-    final prefs = getIt<AppPrefs>();
-    if (prefs.hasSeenHomeTour) return;
-    if (state is! TripsSuccess && state is! TripsEmpty) return;
-
-    _tourScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final keys = <GlobalKey>[
-        _newTripKey,
-        if (state is TripsSuccess) _exampleTripKey,
-        _accountKey,
-      ];
-      ShowcaseView.get().startShowCase(keys);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,12 +36,8 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
     return Scaffold(
       body: OrbitBackdrop(
         child: SafeArea(
-          child: BlocConsumer<TripsBloc, TripsState>(
-            listener: (context, state) => _maybeStartTour(state),
+          child: BlocBuilder<TripsBloc, TripsState>(
             builder: (context, state) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _maybeStartTour(state);
-              });
               return CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
@@ -127,36 +92,18 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
                           SizedBox(height: spacing.xl),
                           Row(
                             children: [
-                              Showcase(
-                                key: _newTripKey,
-                                title: 'Start a real trip',
-                                description:
-                                    'Tap New trip to create your own journal. '
-                                    'Orbit organizes everything as Trip → Day → Entry.',
-                                titleTextStyle: GoogleFonts.spaceGrotesk(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                  color: colors.ink,
-                                ),
-                                descTextStyle: GoogleFonts.spaceGrotesk(
-                                  fontSize: 13,
-                                  height: 1.4,
-                                  color: colors.body,
-                                ),
-                                tooltipBackgroundColor: colors.canvas,
-                                child: OrbitButton(
-                                  label: 'New trip',
-                                  icon: Icons.add,
-                                  onPressed: () async {
-                                    final created = await context
-                                        .push<bool>('/trips/new');
-                                    if (created == true && context.mounted) {
-                                      context
-                                          .read<TripsBloc>()
-                                          .add(const RefreshTrips());
-                                    }
-                                  },
-                                ),
+                              OrbitButton(
+                                label: 'New trip',
+                                icon: Icons.add,
+                                onPressed: () async {
+                                  final created =
+                                      await context.push<bool>('/trips/new');
+                                  if (created == true && context.mounted) {
+                                    context
+                                        .read<TripsBloc>()
+                                        .add(const RefreshTrips());
+                                  }
+                                },
                               ),
                               SizedBox(width: spacing.sm),
                               OrbitButton(
@@ -173,25 +120,7 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
                                 },
                               ),
                               SizedBox(width: spacing.sm),
-                              Showcase(
-                                key: _accountKey,
-                                title: 'Sync when ready',
-                                description:
-                                    'Sign in anytime to sync trips to the cloud. '
-                                    'You can keep journaling offline too.',
-                                titleTextStyle: GoogleFonts.spaceGrotesk(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                  color: colors.ink,
-                                ),
-                                descTextStyle: GoogleFonts.spaceGrotesk(
-                                  fontSize: 13,
-                                  height: 1.4,
-                                  color: colors.body,
-                                ),
-                                tooltipBackgroundColor: colors.canvas,
-                                child: const _AccountActions(),
-                              ),
+                              const _AccountActions(),
                               SizedBox(width: spacing.sm),
                               _AccentDots(colors: colors),
                             ],
@@ -243,7 +172,7 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
                         actionLabel: 'Retry',
                         onAction: () => context
                             .read<TripsBloc>()
-                            .add(const LoadTrips(seedDemo: false)),
+                            .add(const LoadTrips()),
                       ),
                     )
                   else if (state is TripsEmpty)
@@ -278,11 +207,9 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
                             SizedBox(height: spacing.lg),
                         itemBuilder: (context, index) {
                           final trip = state.trips[index];
-                          final isExample = trip.id == AppPrefs.exampleTripId;
-                          final card = TripCard(
+                          return TripCard(
                             trip: trip,
                             index: index,
-                            isExample: isExample,
                             onTap: () => context.push('/trips/${trip.id}'),
                             onDelete: () {
                               context
@@ -290,30 +217,6 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
                                   .add(RemoveTrip(trip.id));
                             },
                           );
-
-                          if (index == 0) {
-                            return Showcase(
-                              key: _exampleTripKey,
-                              title: 'Example trip',
-                              description:
-                                  'This is a sample journal so you can see how '
-                                  'Orbit works. Open it to explore days and '
-                                  'entries, or swipe left / tap delete to remove it.',
-                              titleTextStyle: GoogleFonts.spaceGrotesk(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: colors.ink,
-                              ),
-                              descTextStyle: GoogleFonts.spaceGrotesk(
-                                fontSize: 13,
-                                height: 1.4,
-                                color: colors.body,
-                              ),
-                              tooltipBackgroundColor: colors.canvas,
-                              child: card,
-                            );
-                          }
-                          return card;
                         },
                       ),
                     ),

@@ -76,12 +76,11 @@
   "changelog": {
     "1.0.0": [
       "First release of Orbit Notes",
-      "Trip → Day → Entry journal with Clay cream UI",
-      "Local Drift/SQLite storage and on-device photos",
-      "Map pins (OSM) plus one-shot GPS or manual pin",
-      "Email + Google auth via Supabase and cloud sync",
-      "First-launch login/signup gate and showcaseview tour",
-      "One deletable EXAMPLE trip for onboarding"
+      "Trip → Day → Entry journal",
+      "Local storage and on-device photos",
+      "Searchable map pins and GPS",
+      "AI trip planner",
+      "Email + Google auth with optional cloud sync"
     ]
   },
   "build_locally": {
