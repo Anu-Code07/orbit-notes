@@ -13,7 +13,7 @@ if [[ ! -f "$CONFIG" ]]; then
   exit 1
 fi
 
-mapfile -t META < <(python3 - <<PY
+eval "$(python3 - <<PY
 import json
 from pathlib import Path
 
@@ -23,21 +23,14 @@ Path("$DEFINES_OUT").write_text(json.dumps(defines, indent=2) + "\n")
 
 app = cfg["app"]
 android = cfg.get("android", {})
-print(app["version"])
-print(app["build_number"])
-print(str(android.get("apk", {}).get("enabled", False)).lower())
-print(str(android.get("appbundle", {}).get("enabled", False)).lower())
-print(android.get("apk", {}).get("output", ""))
-print(android.get("appbundle", {}).get("output", ""))
+print(f'VERSION_NAME={app["version"]!r}')
+print(f'VERSION_CODE={app["build_number"]!r}')
+print(f'BUILD_APK={str(android.get("apk", {}).get("enabled", False)).lower()!r}')
+print(f'BUILD_AAB={str(android.get("appbundle", {}).get("enabled", False)).lower()!r}')
+print(f'APK_OUT={android.get("apk", {}).get("output", "")!r}')
+print(f'AAB_OUT={android.get("appbundle", {}).get("output", "")!r}')
 PY
-)
-
-VERSION_NAME="${META[0]}"
-VERSION_CODE="${META[1]}"
-BUILD_APK="${META[2]}"
-BUILD_AAB="${META[3]}"
-APK_OUT="${META[4]}"
-AAB_OUT="${META[5]}"
+)"
 
 echo "Orbit Notes release"
 echo "  version: ${VERSION_NAME}+${VERSION_CODE}"
