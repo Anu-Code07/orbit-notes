@@ -9,6 +9,7 @@ import 'package:orbit_notes/core/prefs/app_prefs.dart';
 import 'package:orbit_notes/core/theme/app_colors.dart';
 import 'package:orbit_notes/core/theme/app_radii.dart';
 import 'package:orbit_notes/core/theme/app_spacing.dart';
+import 'package:orbit_notes/core/widgets/made_by_credit.dart';
 import 'package:orbit_notes/core/widgets/orbit_backdrop.dart';
 import 'package:orbit_notes/core/widgets/orbit_button.dart';
 import 'package:orbit_notes/features/auth/presentation/bloc/auth_bloc.dart';
@@ -123,6 +124,8 @@ class _TripsHomeViewState extends State<_TripsHomeView> {
                                   ),
                             ),
                           ),
+                          SizedBox(height: spacing.sm),
+                          const MadeByCredit(),
                           const _SignedInAsLine(),
                           SizedBox(height: spacing.xl),
                           Row(

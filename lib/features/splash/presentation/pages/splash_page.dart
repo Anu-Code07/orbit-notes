@@ -9,6 +9,7 @@ import 'package:orbit_notes/core/di/injection.dart';
 import 'package:orbit_notes/core/prefs/app_prefs.dart';
 import 'package:orbit_notes/core/theme/app_colors.dart';
 import 'package:orbit_notes/core/theme/app_spacing.dart';
+import 'package:orbit_notes/core/widgets/made_by_credit.dart';
 import 'package:orbit_notes/core/widgets/orbit_backdrop.dart';
 
 /// Short travel-themed animated splash shown after the native splash.
@@ -129,6 +130,8 @@ class _SplashPageState extends State<SplashPage>
                                   .bodyMedium
                                   ?.copyWith(color: colors.body),
                             ),
+                            SizedBox(height: spacing.sm),
+                            const MadeByCredit(align: TextAlign.center),
                           ],
                         ),
                       ),

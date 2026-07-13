@@ -29,4 +29,4 @@ Your journals live on device by default. Location is used only when you ask for 
 
 ---
 
-*Private project — Orbit Notes*
+*Orbit Notes — by Anurag*
