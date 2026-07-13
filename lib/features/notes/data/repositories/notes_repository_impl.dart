@@ -274,6 +274,78 @@ class NotesRepositoryImpl implements NotesRepository {
     return dest;
   }
 
+  @override
+  Future<void> seedDemoIfEmpty() async {
+    final existing = await getTrips();
+    if (existing.isNotEmpty) return;
+
+    final now = DateTime.now();
+    const exampleId = 'orbit-example-trip';
+    final trip = Trip(
+      id: exampleId,
+      title: 'Example · Kyoto Spring',
+      startDate: now.subtract(const Duration(days: 14)),
+      endDate: now.subtract(const Duration(days: 10)),
+      destination: 'Kyoto',
+      accentIndex: 0,
+      createdAt: now,
+    );
+    await createTrip(trip);
+
+    final day1 = Day(
+      id: 'orbit-example-day-1',
+      tripId: trip.id,
+      date: trip.startDate,
+      title: 'Day 1 · Arrival',
+      note: 'Open this day to see how entries work.',
+      createdAt: now,
+    );
+    final day2 = Day(
+      id: 'orbit-example-day-2',
+      tripId: trip.id,
+      date: trip.startDate.add(const Duration(days: 1)),
+      title: 'Day 2 · Explore',
+      note: 'Add a pin, a photo, or delete this trip anytime.',
+      createdAt: now,
+    );
+    await createDay(day1);
+    await createDay(day2);
+
+    await createEntry(
+      Entry(
+        id: 'orbit-example-entry-1',
+        dayId: day1.id,
+        body:
+            'Orbit keeps trips → days → entries. This sample has a map pin — '
+            'open it, then swipe left on the home card when you are done.',
+        placeName: 'Fushimi Inari',
+        createdAt: now,
+      ),
+    );
+    await createEntry(
+      Entry(
+        id: 'orbit-example-entry-2',
+        dayId: day2.id,
+        body: 'Create your own journal with New trip whenever you are ready.',
+        placeName: 'Arashiyama',
+        createdAt: now,
+      ),
+    );
+
+    await upsertPin(
+      MapPin(
+        id: 'orbit-example-pin-1',
+        latitude: 34.9671,
+        longitude: 135.7727,
+        label: 'Fushimi Inari',
+        tripId: trip.id,
+        dayId: day1.id,
+        entryId: 'orbit-example-entry-1',
+        createdAt: now,
+      ),
+    );
+  }
+
   Trip _tripFromRow(TripRow row) => Trip(
         id: row.id,
         title: row.title,

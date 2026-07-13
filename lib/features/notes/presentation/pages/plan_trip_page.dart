@@ -12,7 +12,6 @@ import 'package:orbit_notes/core/theme/app_radii.dart';
 import 'package:orbit_notes/core/theme/app_spacing.dart';
 import 'package:orbit_notes/core/widgets/orbit_backdrop.dart';
 import 'package:orbit_notes/core/widgets/orbit_button.dart';
-import 'package:orbit_notes/features/notes/data/datasources/place_image_service.dart';
 import 'package:orbit_notes/features/notes/domain/entities/planned_trip.dart';
 import 'package:orbit_notes/features/notes/presentation/bloc/plan_trip/plan_trip_bloc.dart';
 
@@ -946,7 +945,6 @@ class _PlanTimeline extends StatelessWidget {
                   day: day,
                   accent: accent,
                   showLine: !isLast,
-                  destination: plan.destination,
                 );
               }),
               if (error != null) ...[
@@ -1002,22 +1000,17 @@ class _TimelineDayCard extends StatelessWidget {
     required this.day,
     required this.accent,
     required this.showLine,
-    required this.destination,
   });
 
   final PlannedTripDay day;
   final Color accent;
   final bool showLine;
-  final String destination;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final spacing = context.spacing;
     final radii = context.radii;
-    final imageQuery = (day.placeHint?.trim().isNotEmpty ?? false)
-        ? day.placeHint!.trim()
-        : '$destination ${day.title}';
 
     return IntrinsicHeight(
       child: Row(
@@ -1065,7 +1058,7 @@ class _TimelineDayCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _PlaceHeroImage(query: imageQuery, accent: accent),
+                  _PlaceHeroImage(accent: accent),
                   Padding(
                     padding: EdgeInsets.all(spacing.md),
                     child: Row(
@@ -1143,48 +1136,25 @@ class _TimelineDayCard extends StatelessWidget {
 }
 
 class _PlaceHeroImage extends StatelessWidget {
-  const _PlaceHeroImage({required this.query, required this.accent});
+  const _PlaceHeroImage({required this.accent});
 
-  final String query;
   final Color accent;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return FutureBuilder<String?>(
-      future: getIt<PlaceImageService>().imageUrlFor(query),
-      builder: (context, snapshot) {
-        final url = snapshot.data;
-        return SizedBox(
-          height: 148,
-          child: url == null
-              ? ColoredBox(
-                  color: accent.withValues(alpha: 0.16),
-                  child: Center(
-                    child: snapshot.connectionState == ConnectionState.waiting
-                        ? SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: accent,
-                            ),
-                          )
-                        : Icon(Icons.landscape_outlined,
-                            color: colors.mutedSoft, size: 36),
-                  ),
-                )
-              : Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => ColoredBox(
-                    color: accent.withValues(alpha: 0.16),
-                    child: Icon(Icons.landscape_outlined,
-                        color: colors.mutedSoft, size: 36),
-                  ),
-                ),
-        );
-      },
+    return SizedBox(
+      height: 148,
+      child: ColoredBox(
+        color: accent.withValues(alpha: 0.16),
+        child: Center(
+          child: Icon(
+            Icons.landscape_outlined,
+            color: colors.mutedSoft,
+            size: 36,
+          ),
+        ),
+      ),
     );
   }
 }

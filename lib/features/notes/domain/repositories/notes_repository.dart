@@ -35,4 +35,7 @@ abstract class NotesRepository {
 
   /// Copies a picked image into app documents and returns the new path.
   Future<String> persistImage(String sourcePath);
+
+  /// Seeds one example trip on first empty launch (once).
+  Future<void> seedDemoIfEmpty();
 }

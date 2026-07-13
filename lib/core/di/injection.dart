@@ -11,7 +11,6 @@ import 'package:orbit_notes/features/notes/data/datasources/app_database.dart';
 import 'package:orbit_notes/features/notes/data/datasources/fallback_trip_planner_datasource.dart';
 import 'package:orbit_notes/features/notes/data/datasources/groq_trip_planner_datasource.dart';
 import 'package:orbit_notes/features/notes/data/datasources/nominatim_place_search_datasource.dart';
-import 'package:orbit_notes/features/notes/data/datasources/place_image_service.dart';
 import 'package:orbit_notes/features/notes/data/datasources/supabase_trip_planner_datasource.dart';
 import 'package:orbit_notes/features/notes/data/repositories/notes_repository_impl.dart';
 import 'package:orbit_notes/features/notes/data/sync/orbit_cloud_sync.dart';
@@ -82,8 +81,8 @@ Future<void> configureDependencies({required AppPrefs prefs}) async {
   getIt.registerLazySingleton(() => GetPinsForTrip(repo));
   getIt.registerLazySingleton(() => GetPinForEntry(repo));
   getIt.registerLazySingleton(() => UpsertPin(repo));
+  getIt.registerLazySingleton(() => SeedDemoIfEmpty(repo, prefs));
 
-  getIt.registerLazySingleton(PlaceImageService.new);
   getIt.registerLazySingleton<PlaceSearchRepository>(
     NominatimPlaceSearchDataSource.new,
   );
@@ -101,7 +100,9 @@ Future<void> configureDependencies({required AppPrefs prefs}) async {
   getIt.registerFactory(
     () => TripsBloc(
       getTrips: getIt(),
+      seedDemoIfEmpty: getIt(),
       deleteTrip: getIt(),
+      prefs: prefs,
     ),
   );
 

@@ -1,3 +1,4 @@
+import 'package:orbit_notes/core/prefs/app_prefs.dart';
 import 'package:orbit_notes/features/notes/domain/entities/day.dart';
 import 'package:orbit_notes/features/notes/domain/entities/entry.dart';
 import 'package:orbit_notes/features/notes/domain/entities/map_pin.dart';
@@ -130,4 +131,24 @@ class UpsertPin {
   final NotesRepository _repository;
 
   Future<MapPin> call(MapPin pin) => _repository.upsertPin(pin);
+}
+
+class SeedDemoIfEmpty {
+  SeedDemoIfEmpty(this._repository, this._prefs);
+
+  final NotesRepository _repository;
+  final AppPrefs _prefs;
+
+  Future<void> call() async {
+    if (_prefs.hasSeededExampleTrip) return;
+
+    final trips = await _repository.getTrips();
+    if (trips.isNotEmpty) {
+      await _prefs.markExampleTripSeeded();
+      return;
+    }
+
+    await _repository.seedDemoIfEmpty();
+    await _prefs.markExampleTripSeeded();
+  }
 }

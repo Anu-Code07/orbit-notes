@@ -18,12 +18,14 @@ class TripCard extends StatelessWidget {
     required this.index,
     required this.onTap,
     this.onDelete,
+    this.isExample = false,
   });
 
   final Trip trip;
   final int index;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final bool isExample;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +97,31 @@ class TripCard extends StatelessWidget {
                               Colors.black.withValues(alpha: 0.05),
                               Colors.black.withValues(alpha: 0.35),
                             ],
+                          ),
+                        ),
+                      ),
+                    if (isExample)
+                      Positioned(
+                        top: spacing.md,
+                        left: spacing.md,
+                        child: FrostedGlass(
+                          borderRadius: radii.smRadius,
+                          tintOpacity: 0.72,
+                          blurSigma: 12,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(
+                            'EXAMPLE',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: colors.ink,
+                                  letterSpacing: 1.4,
+                                  fontSize: 10,
+                                ),
                           ),
                         ),
                       ),
@@ -179,9 +206,11 @@ class TripCard extends StatelessWidget {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Delete trip?'),
+            title: Text(isExample ? 'Remove example?' : 'Delete trip?'),
             content: Text(
-              '“${trip.title}” and its days, entries, and photos will be removed from this device.',
+              isExample
+                  ? 'This sample won’t come back after you remove it.'
+                  : '“${trip.title}” and its days, entries, and photos will be removed from this device.',
             ),
             actions: [
               TextButton(

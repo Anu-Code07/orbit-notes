@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import 'package:orbit_notes/core/di/injection.dart';
+import 'package:orbit_notes/core/prefs/app_prefs.dart';
 import 'package:orbit_notes/core/theme/app_colors.dart';
 import 'package:orbit_notes/core/theme/app_radii.dart';
 import 'package:orbit_notes/core/theme/app_spacing.dart';
@@ -24,8 +27,36 @@ class TripsHomePage extends StatelessWidget {
   }
 }
 
-class _TripsHomeView extends StatelessWidget {
+class _TripsHomeView extends StatefulWidget {
   const _TripsHomeView();
+
+  @override
+  State<_TripsHomeView> createState() => _TripsHomeViewState();
+}
+
+class _TripsHomeViewState extends State<_TripsHomeView> {
+  final _newTripKey = GlobalKey();
+  final _exampleTripKey = GlobalKey();
+  final _accountKey = GlobalKey();
+  bool _tourScheduled = false;
+
+  void _maybeStartTour(TripsState state) {
+    if (_tourScheduled) return;
+    final prefs = getIt<AppPrefs>();
+    if (prefs.hasSeenHomeTour) return;
+    if (state is! TripsSuccess && state is! TripsEmpty) return;
+
+    _tourScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final keys = <GlobalKey>[
+        _newTripKey,
+        if (state is TripsSuccess) _exampleTripKey,
+        _accountKey,
+      ];
+      ShowcaseView.get().startShowCase(keys);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +67,12 @@ class _TripsHomeView extends StatelessWidget {
     return Scaffold(
       body: OrbitBackdrop(
         child: SafeArea(
-          child: BlocBuilder<TripsBloc, TripsState>(
+          child: BlocConsumer<TripsBloc, TripsState>(
+            listener: (context, state) => _maybeStartTour(state),
             builder: (context, state) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _maybeStartTour(state);
+              });
               return CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
@@ -92,18 +127,36 @@ class _TripsHomeView extends StatelessWidget {
                           SizedBox(height: spacing.xl),
                           Row(
                             children: [
-                              OrbitButton(
-                                label: 'New trip',
-                                icon: Icons.add,
-                                onPressed: () async {
-                                  final created =
-                                      await context.push<bool>('/trips/new');
-                                  if (created == true && context.mounted) {
-                                    context
-                                        .read<TripsBloc>()
-                                        .add(const RefreshTrips());
-                                  }
-                                },
+                              Showcase(
+                                key: _newTripKey,
+                                title: 'Start a trip',
+                                description:
+                                    'Create your own journal. Everything is '
+                                    'organized as Trip → Day → Entry.',
+                                titleTextStyle: GoogleFonts.spaceGrotesk(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: colors.ink,
+                                ),
+                                descTextStyle: GoogleFonts.spaceGrotesk(
+                                  fontSize: 13,
+                                  height: 1.4,
+                                  color: colors.body,
+                                ),
+                                tooltipBackgroundColor: colors.canvas,
+                                child: OrbitButton(
+                                  label: 'New trip',
+                                  icon: Icons.add,
+                                  onPressed: () async {
+                                    final created = await context
+                                        .push<bool>('/trips/new');
+                                    if (created == true && context.mounted) {
+                                      context
+                                          .read<TripsBloc>()
+                                          .add(const RefreshTrips());
+                                    }
+                                  },
+                                ),
                               ),
                               SizedBox(width: spacing.sm),
                               OrbitButton(
@@ -120,7 +173,25 @@ class _TripsHomeView extends StatelessWidget {
                                 },
                               ),
                               SizedBox(width: spacing.sm),
-                              const _AccountActions(),
+                              Showcase(
+                                key: _accountKey,
+                                title: 'Sync when ready',
+                                description:
+                                    'Sign in to sync trips to the cloud, '
+                                    'or keep journaling offline.',
+                                titleTextStyle: GoogleFonts.spaceGrotesk(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: colors.ink,
+                                ),
+                                descTextStyle: GoogleFonts.spaceGrotesk(
+                                  fontSize: 13,
+                                  height: 1.4,
+                                  color: colors.body,
+                                ),
+                                tooltipBackgroundColor: colors.canvas,
+                                child: const _AccountActions(),
+                              ),
                               SizedBox(width: spacing.sm),
                               _AccentDots(colors: colors),
                             ],
@@ -172,7 +243,7 @@ class _TripsHomeView extends StatelessWidget {
                         actionLabel: 'Retry',
                         onAction: () => context
                             .read<TripsBloc>()
-                            .add(const LoadTrips()),
+                            .add(const LoadTrips(seedDemo: false)),
                       ),
                     )
                   else if (state is TripsEmpty)
@@ -207,9 +278,12 @@ class _TripsHomeView extends StatelessWidget {
                             SizedBox(height: spacing.lg),
                         itemBuilder: (context, index) {
                           final trip = state.trips[index];
-                          return TripCard(
+                          final isExample =
+                              trip.id == AppPrefs.exampleTripId;
+                          final card = TripCard(
                             trip: trip,
                             index: index,
+                            isExample: isExample,
                             onTap: () => context.push('/trips/${trip.id}'),
                             onDelete: () {
                               context
@@ -217,6 +291,29 @@ class _TripsHomeView extends StatelessWidget {
                                   .add(RemoveTrip(trip.id));
                             },
                           );
+
+                          if (isExample) {
+                            return Showcase(
+                              key: _exampleTripKey,
+                              title: 'Example trip',
+                              description:
+                                  'A sample journal to explore. Open it, or '
+                                  'swipe left to remove it — it won’t come back.',
+                              titleTextStyle: GoogleFonts.spaceGrotesk(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: colors.ink,
+                              ),
+                              descTextStyle: GoogleFonts.spaceGrotesk(
+                                fontSize: 13,
+                                height: 1.4,
+                                color: colors.body,
+                              ),
+                              tooltipBackgroundColor: colors.canvas,
+                              child: card,
+                            );
+                          }
+                          return card;
                         },
                       ),
                     ),

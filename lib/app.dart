@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import 'package:orbit_notes/core/di/injection.dart';
 import 'package:orbit_notes/core/prefs/app_prefs.dart';
@@ -31,6 +32,16 @@ class _OrbitAppState extends State<OrbitApp> {
   @override
   void initState() {
     super.initState();
+    ShowcaseView.register(
+      blurValue: 1.2,
+      autoPlayDelay: const Duration(seconds: 4),
+      onFinish: () {
+        _prefs.markHomeTourSeen();
+      },
+      onDismiss: (_) {
+        _prefs.markHomeTourSeen();
+      },
+    );
 
     _router = GoRouter(
       initialLocation: '/splash',
@@ -92,6 +103,12 @@ class _OrbitAppState extends State<OrbitApp> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    ShowcaseView.get().unregister();
+    super.dispose();
   }
 
   @override
