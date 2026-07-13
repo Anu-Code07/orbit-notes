@@ -1,5 +1,93 @@
 {
-  "SUPABASE_URL": "https://oyjxpiradbbuocxsunmu.supabase.co",
-  "SUPABASE_ANON_KEY": "sb_publishable_RunjlGX9mXvJo9gwaswjcg_gHCToHIR",
-  "GOOGLE_WEB_CLIENT_ID": "245020475764-jhbmje6n9sm636bkta903fr053aj13qt.apps.googleusercontent.com"
+  "app": {
+    "name": "Orbit Notes",
+    "description": "Local-first travel journal — Trip → Day → Entry",
+    "android_application_id": "com.orbit.orbit_notes",
+    "ios_bundle_id": "com.orbit.orbitNotes",
+    "version": "1.0.0",
+    "build_number": 1,
+    "version_full": "1.0.0+1",
+    "tag": "v1.0.0"
+  },
+  "dart_defines": {
+    "SUPABASE_URL": "https://oyjxpiradbbuocxsunmu.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_RunjlGX9mXvJo9gwaswjcg_gHCToHIR",
+    "GOOGLE_WEB_CLIENT_ID": "245020475764-jhbmje6n9sm636bkta903fr053aj13qt.apps.googleusercontent.com"
+  },
+  "env": {
+    "required_for_ci_overrides": [
+      "SUPABASE_URL",
+      "SUPABASE_ANON_KEY",
+      "GOOGLE_WEB_CLIENT_ID"
+    ],
+    "never_commit": [
+      "GOOGLE_CLIENT_SECRET",
+      "SUPABASE_SERVICE_ROLE_KEY"
+    ],
+    "notes": "Google client secret stays in Supabase Auth → Google only. Publishable/anon key is OK in the client."
+  },
+  "pre_build": [
+    "flutter pub get",
+    "dart run build_runner build --delete-conflicting-outputs",
+    "flutter analyze",
+    "flutter test"
+  ],
+  "android": {
+    "apk": {
+      "enabled": true,
+      "command": "flutter build apk --release --dart-define-from-file=.dart_defines.release.json --build-name=1.0.0 --build-number=1",
+      "simple_command": "flutter build apk --release",
+      "output": "build/app/outputs/flutter-apk/app-release.apk"
+    },
+    "appbundle": {
+      "enabled": true,
+      "command": "flutter build appbundle --release --dart-define-from-file=.dart_defines.release.json --build-name=1.0.0 --build-number=1",
+      "simple_command": "flutter build appbundle --release",
+      "output": "build/app/outputs/bundle/release/app-release.aab"
+    },
+    "target_platforms": ["android-arm64", "android-arm"]
+  },
+  "ios": {
+    "ipa": {
+      "enabled": false,
+      "command": "flutter build ipa --release --dart-define-from-file=.dart_defines.release.json --build-name=1.0.0 --build-number=1",
+      "simple_command": "flutter build ipa --release",
+      "output": "build/ios/ipa/*.ipa",
+      "requires": [
+        "Apple Developer signing team",
+        "ExportOptions.plist / automatic signing in Xcode"
+      ]
+    },
+    "live_activities": {
+      "supported_in_app": false,
+      "notes": [
+        "Orbit does not ship Live Activities / ActivityKit yet.",
+        "When added: enable Push Notifications + Live Activities capability on the Runner target.",
+        "Use a Widget Extension target; keep activity payloads small and avoid secrets.",
+        "Test on a physical iPhone (simulator Live Activity support is limited)."
+      ]
+    }
+  },
+  "screenshots": [
+    "docs/screenshots/login.png",
+    "docs/screenshots/home.png",
+    "docs/screenshots/trip-detail.png"
+  ],
+  "changelog": {
+    "1.0.0": [
+      "First release of Orbit Notes",
+      "Trip → Day → Entry journal with Clay cream UI",
+      "Local Drift/SQLite storage and on-device photos",
+      "Map pins (OSM) plus one-shot GPS or manual pin",
+      "Email + Google auth via Supabase and cloud sync",
+      "First-launch login/signup gate and showcaseview tour",
+      "One deletable EXAMPLE trip for onboarding"
+    ]
+  },
+  "build_locally": {
+    "script": "./scripts/build_release.sh",
+    "apk": "flutter build apk --release",
+    "appbundle": "flutter build appbundle --release",
+    "ipa": "flutter build ipa --release"
+  }
 }

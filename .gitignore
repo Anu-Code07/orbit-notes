@@ -51,6 +51,7 @@ app.*.map.json
 *.p12
 **/google-services.json
 **/GoogleService-Info.plist
+.dart_defines.release.json
 
 # Supabase CLI local link metadata
 supabase/.temp/

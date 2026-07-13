@@ -17,11 +17,11 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Read release.build.json
+      - name: Read release.json
         id: meta
         run: |
-          echo "version_name=$(python3 -c "import json; print(json.load(open('release.build.json'))['version']['name'])")" >> "$GITHUB_OUTPUT"
-          echo "version_code=$(python3 -c "import json; print(json.load(open('release.build.json'))['version']['code'])")" >> "$GITHUB_OUTPUT"
+          echo "version_name=$(python3 -c "import json; print(json.load(open('release.json'))['app']['version'])")" >> "$GITHUB_OUTPUT"
+          echo "version_code=$(python3 -c "import json; print(json.load(open('release.json'))['app']['build_number'])")" >> "$GITHUB_OUTPUT"
 
       - name: Build release
         run: chmod +x scripts/build_release.sh && ./scripts/build_release.sh
@@ -38,10 +38,24 @@ jobs:
           name: orbit-notes-${{ steps.meta.outputs.version_name }}-aab
           path: build/app/outputs/bundle/release/app-release.aab
 
+      - name: Prepare changelog snippet
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          python3 - <<'PY' > "${{ runner.temp }}/release-notes.md"
+          import json
+          cfg = json.load(open("release.json"))
+          ver = cfg["app"]["version"]
+          lines = cfg.get("changelog", {}).get(ver, [])
+          print(f"## Orbit Notes {ver}\n")
+          for line in lines:
+              print(f"- {line}")
+          PY
+
       - name: GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          body_path: ${{ runner.temp }}/release-notes.md
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab

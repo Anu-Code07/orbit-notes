@@ -103,27 +103,23 @@ Never commit the Google **client secret** — dashboard only.
 
 ## Release build
 
-Config files:
-
-| File | Purpose |
-|------|---------|
-| [`release.json`](release.json) | `--dart-define-from-file` (Supabase URL, publishable key, Google client ID) |
-| [`release.build.json`](release.build.json) | Version, package id, which artifacts to build |
+Single source of truth: [`release.json`](release.json)  
+(app IDs, version `1.0.0+1`, Android/iOS commands, env notes, changelog, screenshots).
 
 ```bash
-# APK + App Bundle (reads both JSON files)
+# APK + App Bundle (recommended)
 ./scripts/build_release.sh
 
 # Or manually
-flutter build apk --release \
-  --dart-define-from-file=release.json \
-  --build-name=1.0.0 \
-  --build-number=1
+flutter build apk --release
+flutter build appbundle --release
 ```
 
-Tag `v1.0.0` (or use Actions → Release → Run workflow) to build on GitHub via [`.github/workflows/release.yml`](.github/workflows/release.yml).
+The script writes `.dart_defines.release.json` from `release.json` → `dart_defines` and passes version via `--build-name` / `--build-number`.
 
-Bump `version` in `pubspec.yaml` and `release.build.json` together before shipping.
+Tag `v1.0.0` (or Actions → Release → Run workflow) to build on GitHub via [`.github/workflows/release.yml`](.github/workflows/release.yml).
+
+Bump `version` in `pubspec.yaml` and `release.json` → `app` together before shipping.
 
 ---
 
