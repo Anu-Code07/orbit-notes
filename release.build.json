@@ -1,0 +1,34 @@
+{
+  "app": {
+    "name": "Orbit Notes",
+    "package_id": "com.orbit.orbit_notes",
+    "description": "Local-first travel journal — Trip → Day → Entry"
+  },
+  "version": {
+    "name": "1.0.0",
+    "code": 1,
+    "tag": "v1.0.0"
+  },
+  "build": {
+    "mode": "release",
+    "dart_define_file": "release.json",
+    "android": {
+      "apk": true,
+      "appbundle": true,
+      "target_platforms": ["android-arm64", "android-arm"]
+    },
+    "ios": {
+      "ipa": false,
+      "note": "Enable when signing / export options are configured"
+    }
+  },
+  "artifacts": {
+    "apk": "build/app/outputs/flutter-apk/app-release.apk",
+    "aab": "build/app/outputs/bundle/release/app-release.aab"
+  },
+  "notes": [
+    "Client / publishable keys only in release.json — never the Google client secret.",
+    "Build: ./scripts/build_release.sh",
+    "Or: flutter build apk --release --dart-define-from-file=release.json --build-name=1.0.0 --build-number=1"
+  ]
+}

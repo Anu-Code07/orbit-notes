@@ -101,6 +101,32 @@ Never commit the Google **client secret** — dashboard only.
 
 ---
 
+## Release build
+
+Config files:
+
+| File | Purpose |
+|------|---------|
+| [`release.json`](release.json) | `--dart-define-from-file` (Supabase URL, publishable key, Google client ID) |
+| [`release.build.json`](release.build.json) | Version, package id, which artifacts to build |
+
+```bash
+# APK + App Bundle (reads both JSON files)
+./scripts/build_release.sh
+
+# Or manually
+flutter build apk --release \
+  --dart-define-from-file=release.json \
+  --build-name=1.0.0 \
+  --build-number=1
+```
+
+Tag `v1.0.0` (or use Actions → Release → Run workflow) to build on GitHub via [`.github/workflows/release.yml`](.github/workflows/release.yml).
+
+Bump `version` in `pubspec.yaml` and `release.build.json` together before shipping.
+
+---
+
 ## Architecture
 
 ```
