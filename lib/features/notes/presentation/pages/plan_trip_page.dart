@@ -127,11 +127,13 @@ class _PlanComposerState extends State<_PlanComposer> {
   late final TextEditingController _mustController;
 
   static const _vibePresets = [
-    ('Kyoto spring', 'Kyoto in cherry season — temples, tea, slow mornings'),
+    ('Jaipur colour', 'Jaipur — pink forts, bazaars, rooftop evenings'),
     ('Lisbon light', 'Lisbon hills & tiled streets — cafés, miradouros, tram rides'),
-    ('Bali quiet', 'Quiet Bali — rice terraces, ocean evenings, yoga dawns'),
-    ('NYC weekend', 'New York long weekend — museums, pizza, skyline walks'),
+    ('Kerala backwaters', 'Kerala backwaters — houseboats, coconut shade, slow canals'),
+    ('Kyoto spring', 'Kyoto in cherry season — temples, tea, slow mornings'),
+    ('Goa quiet', 'Quiet Goa — beach dawns, fish thalis, old Portuguese lanes'),
     ('Amalfi coast', 'Amalfi coast — cliffs, lemon groves, swimming coves'),
+    ('Leh high road', 'Leh–Ladakh — high passes, monasteries, thin blue sky'),
     ('Iceland road', 'Iceland road trip — waterfalls, hot springs, midnight sun'),
   ];
 
