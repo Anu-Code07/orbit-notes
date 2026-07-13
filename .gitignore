@@ -52,6 +52,7 @@ app.*.map.json
 **/google-services.json
 **/GoogleService-Info.plist
 .dart_defines.release.json
+lib/core/config/groq_secrets.dart
 
 # Supabase CLI local link metadata
 supabase/.temp/

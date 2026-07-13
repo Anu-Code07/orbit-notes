@@ -1,12 +1,16 @@
+import 'package:orbit_notes/core/config/groq_secrets.dart';
+
 /// Groq API config.
 ///
-/// Pass at build/run time:
+/// Key is read from [GroqSecrets] (local string), or override with:
 /// `--dart-define=GROQ_API_KEY=...`
-/// Do not commit a real key (GitHub push protection will block it).
 class GroqConfig {
   const GroqConfig._();
 
-  static const apiKey = String.fromEnvironment('GROQ_API_KEY');
+  static const apiKey = String.fromEnvironment(
+    'GROQ_API_KEY',
+    defaultValue: GroqSecrets.apiKey,
+  );
 
   static const model = String.fromEnvironment(
     'GROQ_MODEL',
